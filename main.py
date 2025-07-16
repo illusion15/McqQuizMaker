@@ -9,7 +9,7 @@ import re
 from collections import Counter
 import platform
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 
 uploaded_data = {
     "blocks": [],
@@ -62,21 +62,31 @@ def process_question_block(block, positive, negative):
     lines = [line.strip() for line in block.split("\n") if line.strip()]
     opts, ans, sol = [], '', ''
     question_lines = []
+
     capturing_question = True
+    capturing_solution = False
+
     for line in lines:
         if re.match(r"^[A-Da-d][\.\)]\s*", line):
             capturing_question = False
+            capturing_solution = False
             option_text = re.sub(r"^[A-Da-d][\.\)]\s*", "", line).strip()
             opts.append(option_text)
         elif line.lower().startswith("correct answer"):
+            capturing_solution = False
             match = re.search(r"(\d)", line)
             if match:
                 ans = match.group(1)
         elif line.lower().startswith("solution"):
+            capturing_question = False
+            capturing_solution = True
             sol = line.split(":", 1)[-1].strip()
         elif capturing_question:
             line = re.sub(r"^Q\d{3,4}\.\s*", "", line)
             question_lines.append(line)
+        elif capturing_solution:
+            sol += " " + line.strip()
+
     q = " ".join(question_lines)
     return {
         "Question": q,
