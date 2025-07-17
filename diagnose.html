@@ -540,25 +540,25 @@ body.dark-mode .issue-sub-list li {
             <div class="report-summary">
                 <div class="summary-item">
                     <i class="fas fa-file-alt summary-icon"></i>
-                    <div class="summary-value">187</div>
+                    <div class="summary-value">{{ total_qs }}</div>
                     <div class="summary-label">Total Questions</div>
                 </div>
                 
                 <div class="summary-item">
                     <i class="fas fa-play-circle summary-icon"></i>
-                    <div class="summary-value">Q101</div>
+                    <div class="summary-value">Q{{ actual_start }}</div>
                     <div class="summary-label">Starting Question</div>
                 </div>
                 
                 <div class="summary-item">
                     <i class="fas fa-stop-circle summary-icon"></i>
-                    <div class="summary-value">Q150</div>
+                    <div class="summary-value">Q{{ actual_end }}</div>
                     <div class="summary-label">Ending Question</div>
                 </div>
                 
                 <div class="summary-item">
                     <i class="fas fa-tasks summary-icon"></i>
-                    <div class="summary-value">50</div>
+                    <div class="summary-value">{{ questions_to_generate }}</div>
                     <div class="summary-label">Questions to Generate</div>
                 </div>
             </div>
@@ -574,7 +574,7 @@ body.dark-mode .issue-sub-list li {
                         <i class="fas fa-check-circle success-icon issue-icon"></i>
                         <div class="issue-content">
                             <div class="issue-title">All questions are in correct sequence</div>
-                            <p>From <strong>Q101</strong> to <strong>Q150</strong></p>
+                            <p>From <strong>Q{{ actual_start }}</strong> to <strong>Q{{ actual_end }}</strong></p>
                         </div>
                     </li>
                     
@@ -582,18 +582,18 @@ body.dark-mode .issue-sub-list li {
                         <i class="fas fa-check-circle success-icon issue-icon"></i>
                         <div class="issue-content">
                             <div class="issue-title">Questions to generate</div>
-                            <p><strong>50</strong> questions from <strong>Q101</strong> to <strong>Q150</strong></p>
+                            <p><strong>{{ questions_to_generate }}</strong> questions from <strong>Q{{ gen_start }}</strong> to <strong>Q{{ gen_end }}</strong></p>
                         </div>
                     </li>
                     
                     <li class="warning-item">
                         <i class="fas fa-exclamation-triangle error-icon issue-icon"></i>
                         <div class="issue-content">
-                            <div class="issue-title">Repeated questions detected (3 total)</div>
+                            <div class="issue-title">Repeated questions detected ({{repeated_questions}} total)</div>
                             <ul class="issue-sub-list">
-                                <li>Question #112 appears multiple times</li>
-                                <li>Question #125 appears multiple times</li>
-                                <li>Question #138 appears multiple times</li>
+                                <li>Question {{repeated_questions}} appears multiple times</li>
+                                <li>Question {{repeated_questions}} appears multiple times</li>
+                                <li>Question {{repeated_questions}} appears multiple times</li>
                             </ul>
                         </div>
                     </li>

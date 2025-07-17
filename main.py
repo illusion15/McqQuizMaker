@@ -59,39 +59,99 @@ def force_table_indent_and_widths(table):
         row.cells[1].width = Inches(4.85)
 
 def process_question_block(block, positive, negative):
-    lines = [line.strip() for line in block.split("\n") if line.strip()]
-    opts, ans, sol = [], '', ''
+    # ✅ Remove question number prefix like Q308. before splitting
+    block = re.sub(r"^Q\d{3,4}\.\s*", "", block.strip(), flags=re.IGNORECASE)
+    lines = [line.rstrip() for line in block.split("\n") if line.strip()]
+    opts, sol_lines = [], []
     question_lines = []
-
+    ans_token = None
     capturing_question = True
     capturing_solution = False
+    capturing_options = False
+    option_pattern = r"^(?:[a-zA-Z0-9]+[\.\)]|\([a-zA-Z0-9]+\))\s*"
 
-    for line in lines:
-        if re.match(r"^[A-Da-d][\.\)]\s*", line):
-            capturing_question = False
-            capturing_solution = False
-            option_text = re.sub(r"^[A-Da-d][\.\)]\s*", "", line).strip()
-            opts.append(option_text)
-        elif line.lower().startswith("correct answer"):
-            capturing_solution = False
-            match = re.search(r"(\d)", line)
+    for i, line in enumerate(lines):
+        line = line.strip()
+
+        # Detect and capture correct answer
+        if line.lower().startswith("correct answer"):
+            capturing_question = capturing_solution = capturing_options = False
+            match = re.search(r"([a-zA-Z\d])", line)
             if match:
-                ans = match.group(1)
-        elif line.lower().startswith("solution"):
-            capturing_question = False
-            capturing_solution = True
-            sol = line.split(":", 1)[-1].strip()
-        elif capturing_question:
-            line = re.sub(r"^Q\d{3,4}\.\s*", "", line)
-            question_lines.append(line)
-        elif capturing_solution:
-            sol += " " + line.strip()
+                ans_token = match.group(1)
+            continue
 
-    q = " ".join(question_lines)
+        # Detect and capture solution
+        if line.lower().startswith("solution"):
+            capturing_question = capturing_options = False
+            capturing_solution = True
+            parts = line.split(":", 1)
+            sol_lines.append(parts[1].strip() if len(parts) > 1 else "")
+            continue
+
+        if capturing_solution:
+            sol_lines.append(line)
+            continue
+
+        # Detect start of a new option
+        if re.match(option_pattern, line):
+            capturing_question = capturing_solution = False
+            capturing_options = True
+            opts.append(line)
+            continue
+
+        # Continue an option line (multi-line option)
+        if capturing_options and opts:
+            if line.lower().startswith("solution"):  # if solution missed initial detection
+                capturing_options = False
+                capturing_solution = True
+                parts = line.split(":", 1)
+                sol_lines.append(parts[1].strip() if len(parts) > 1 else "")
+            else:
+                opts[-1] += " " + line
+            continue
+
+        # Default: assume part of the question
+        if capturing_question:
+            question_lines.append(line)
+
+
+    # ✅ Join question lines cleanly into one paragraph
+    q = " ".join(question_lines).replace("  ", " ").strip()
+    sol = " ".join(sol_lines).strip()
+    total_opts = len(opts)
+    table_opts = ["", "", "", ""]
+    ans = ""
+    note = ""
+
+    if total_opts > 0:
+        if ans_token:
+            if ans_token.isdigit():
+                num = int(ans_token)
+            else:
+                num = ord(ans_token.lower()) - ord('a') + 1
+            if 1 <= num <= total_opts:
+                if total_opts > 4:
+                    if num > total_opts - 4:
+                        ans = str(num - (total_opts - 4))
+                else:
+                    ans = str(num)
+
+        if total_opts > 4:
+            extra_options = opts[:total_opts-4]
+            extra_text = "\n" + "\n".join(extra_options)
+            q += extra_text
+            table_opts = [re.sub(option_pattern, "", opt, 1).strip() for opt in opts[total_opts-4:]]
+        else:
+            table_opts = [re.sub(option_pattern, "", opt, 1).strip() for opt in opts]
+            table_opts += [""] * (4 - total_opts)
+    else:
+        table_opts = ["", "", "", ""]
+
     return {
         "Question": q,
         "Type": "multiple_choice",
-        "Options": opts + ["", "", "", ""][len(opts):],
+        "Options": table_opts,
         "Answer": ans,
         "Solution": sol,
         "Positive Marks": positive,
@@ -131,7 +191,7 @@ def upload():
             if i > 0 and base_numbers[i] != base_numbers[i-1] + 1:
                 errors.append(f"Issue at Q{base_numbers[i]} (expected Q{base_numbers[i-1] + 1})")
 
-        opts = len(re.findall(r"^[A-Da-d][\.\)]\s*", block, re.MULTILINE))
+        opts = len(re.findall(r"^(?:[a-zA-Z0-9]+[\.\)]|\([a-zA-Z0-9]+\))\s*", block, re.MULTILINE))
         if opts != 4 and match:
             option_issues.append(f"Q{match.group(1)} has {opts} options")
 
@@ -212,50 +272,19 @@ def generate():
         for i, (label, value) in enumerate(zip(labels, values)):
             row = table.rows[i]
             row.cells[0].text = label
-            row.cells[1].text = value
+            if label == "Question":
+                row.cells[1].text = value  # 🔁 allow line breaks for extra options
+            else:
+                row.cells[1].text = re.sub(r"\s*\n\s*", " ", value).strip()
+
         document.add_paragraph("")
 
-    if output_format == "pdf":
-        import tempfile, os
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_docx:
-            document.save(tmp_docx.name)
-            tmp_docx.flush()
-
-            pdf_path = tmp_docx.name.replace(".docx", ".pdf")
-
-            if platform.system() == "Windows":
-                from docx2pdf import convert
-                convert(tmp_docx.name, pdf_path)
-            else:
-                return "❌ PDF generation is only supported on Windows with MS Word installed.", 500
-
-            return send_file(pdf_path, as_attachment=True,
-                             download_name='Processed_MCQs.pdf',
-                             mimetype='application/pdf')
-
-    elif output_format == "zip":
-        from zipfile import ZipFile
-        import tempfile, os
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_docx:
-            document.save(tmp_docx.name)
-            tmp_docx.flush()
-
-            zip_path = tmp_docx.name.replace(".docx", ".zip")
-            with ZipFile(zip_path, 'w') as zipf:
-                zipf.write(tmp_docx.name, arcname="Processed_MCQs.docx")
-
-            return send_file(zip_path, as_attachment=True,
-                             download_name='Processed_MCQs.zip',
-                             mimetype='application/zip')
-
-    else:
-        output_stream = BytesIO()
-        document.save(output_stream)
-        output_stream.seek(0)
-        return send_file(output_stream, as_attachment=True,
-                         download_name='Processed_MCQs.docx',
-                         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    output_stream = BytesIO()
+    document.save(output_stream)
+    output_stream.seek(0)
+    return send_file(output_stream, as_attachment=True,
+                     download_name='Processed_MCQs.docx',
+                     mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
 
 if __name__ == "__main__":
     app.run(debug=True)

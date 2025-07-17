@@ -1039,7 +1039,7 @@ footer {
   <div class="container">
     <h1 class="form-title">Create Your MCQ Quiz</h1>
     
-    <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+      <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
       <div class="form-group">
         <label for="pdf_file"><i class="fas fa-file-pdf"></i> Upload PDF File</label>
         <div class="drop-area" id="drop-area">
@@ -1048,6 +1048,8 @@ footer {
           <div class="drop-subtext">or click to browse files</div>
           <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" hidden required />
         </div>
+        <!-- ✅ Show uploaded file name -->
+        <div id="file-name-display" style="margin-top: 10px; font-weight: 500; text-align: center; color: var(--text-secondary-light);"></div>
       </div>
 
       <div class="form-grid">
@@ -1171,134 +1173,133 @@ footer {
         <a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a>
       </div>
       <div class="copyright">
-        &copy; 2023 MCQ Quiz Maker. All rights reserved.
+        &copy; 2025 MCQ Quiz Maker. All rights reserved.
       </div>
     </div>
   </footer>
 
   <script>
-    const dropArea = document.getElementById('drop-area');
-    const fileInput = document.getElementById('pdf_file');
-    const preview = document.getElementById('preview');
+  const dropArea = document.getElementById('drop-area');
+  const fileInput = document.getElementById('pdf_file');
+  const preview = document.getElementById('preview');
 
-    dropArea.addEventListener('click', () => fileInput.click());
+  dropArea.addEventListener('click', () => fileInput.click());
 
-    dropArea.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropArea.classList.add('dragover');
-    });
+  dropArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropArea.classList.add('dragover');
+  });
 
-    dropArea.addEventListener('dragleave', () => {
-      dropArea.classList.remove('dragover');
-    });
+  dropArea.addEventListener('dragleave', () => {
+    dropArea.classList.remove('dragover');
+  });
 
-    dropArea.addEventListener('drop', e => {
-      e.preventDefault();
-      dropArea.classList.remove('dragover');
-      fileInput.files = e.dataTransfer.files;
-      fileInput.dispatchEvent(new Event('change'));
-    });
+  dropArea.addEventListener('drop', e => {
+    e.preventDefault();
+    dropArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  });
 
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file || !file.name.endsWith('.pdf')) {
-        preview.innerHTML = `
-          <div class="no-preview">
-            <i class="fas fa-exclamation-circle"></i>
-            <div>Please upload a valid PDF file</div>
-          </div>
-        `;
-        return;
-      }
-
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file || !file.name.endsWith('.pdf')) {
       preview.innerHTML = `
-        <div class="preview-loading">
-          <div class="spinner"></div>
-          <div>Loading PDF preview...</div>
+        <div class="no-preview">
+          <i class="fas fa-exclamation-circle"></i>
+          <div>Please upload a valid PDF file</div>
         </div>
       `;
+      document.getElementById('file-name-display').textContent = '';
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const typedArray = new Uint8Array(e.target.result);
-        
-        pdfjsLib.getDocument({ data: typedArray }).promise.then(pdf => {
-          pdf.getPage(1).then(page => {
-            const viewport = page.getViewport({ scale: 1.0 });
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            
-            page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
-              // Create thumbnail
-              const thumbnail = document.createElement('div');
-              thumbnail.style.textAlign = 'center';
-              thumbnail.style.marginBottom = '1rem';
-              
-              const img = document.createElement('img');
-              img.src = canvas.toDataURL();
-              img.style.maxWidth = '100%';
-              img.style.borderRadius = '8px';
-              img.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
-              thumbnail.appendChild(img);
-              
-              // Get text content
-              page.getTextContent().then(content => {
-                const text = content.items.map(item => item.str).join(' ');
-                
-                preview.innerHTML = '';
-                preview.appendChild(thumbnail);
-                
-                const textPreview = document.createElement('div');
-                textPreview.className = 'preview-content';
-                textPreview.innerText = text.slice(0, 1000) + (text.length > 1000 ? '...' : '');
-                preview.appendChild(textPreview);
-                
-                const pageInfo = document.createElement('div');
-                pageInfo.style.marginTop = '1rem';
-                pageInfo.style.fontSize = '0.9rem';
-                pageInfo.style.color = 'var(--text-secondary-light)';
-                pageInfo.innerHTML = `<strong>${pdf.numPages}</strong> page(s) detected`;
-                preview.appendChild(pageInfo);
-              });
+    // ✅ Display uploaded file name
+    document.getElementById('file-name-display').textContent = `✔️ File uploaded: ${file.name}`;
+
+    preview.innerHTML = `
+      <div class="preview-loading">
+        <div class="spinner"></div>
+        <div>Loading PDF preview...</div>
+      </div>
+    `;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const typedArray = new Uint8Array(e.target.result);
+      pdfjsLib.getDocument({ data: typedArray }).promise.then(pdf => {
+        pdf.getPage(1).then(page => {
+          const viewport = page.getViewport({ scale: 1.0 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
+            const thumbnail = document.createElement('div');
+            thumbnail.style.textAlign = 'center';
+            thumbnail.style.marginBottom = '1rem';
+
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL();
+            img.style.maxWidth = '100%';
+            img.style.borderRadius = '8px';
+            img.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
+            thumbnail.appendChild(img);
+
+            page.getTextContent().then(content => {
+              const text = content.items.map(item => item.str).join(' ');
+              preview.innerHTML = '';
+              preview.appendChild(thumbnail);
+
+              const textPreview = document.createElement('div');
+              textPreview.className = 'preview-content';
+              textPreview.innerText = text.slice(0, 1000) + (text.length > 1000 ? '...' : '');
+              preview.appendChild(textPreview);
+
+              const pageInfo = document.createElement('div');
+              pageInfo.style.marginTop = '1rem';
+              pageInfo.style.fontSize = '0.9rem';
+              pageInfo.style.color = 'var(--text-secondary-light)';
+              pageInfo.innerHTML = `<strong>${pdf.numPages}</strong> page(s) detected`;
+              preview.appendChild(pageInfo);
             });
-          }).catch(err => {
-            preview.innerHTML = `
-              <div class="no-preview">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div>Could not render PDF preview</div>
-              </div>
-            `;
           });
         }).catch(err => {
           preview.innerHTML = `
             <div class="no-preview">
               <i class="fas fa-exclamation-triangle"></i>
-              <div>Could not load PDF. Please try another file.</div>
+              <div>Could not render PDF preview</div>
             </div>
           `;
-          console.error(err);
         });
-      };
-      reader.readAsArrayBuffer(file);
-    });
-    
-    // Set dark mode preference
-    document.addEventListener('DOMContentLoaded', function() {
-      if(localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark-mode');
-        document.querySelector('.toggle-mode input').checked = true;
-      }
-      
-      document.querySelector('.toggle-mode input').addEventListener('change', function() {
-        if(document.body.classList.contains('dark-mode')) {
-          localStorage.setItem('darkMode', 'enabled');
-        } else {
-          localStorage.setItem('darkMode', 'disabled');
-        }
+      }).catch(err => {
+        preview.innerHTML = `
+          <div class="no-preview">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>Could not load PDF. Please try another file.</div>
+          </div>
+        `;
+        console.error(err);
       });
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+      document.querySelector('.toggle-mode input').checked = true;
+    }
+
+    document.querySelector('.toggle-mode input').addEventListener('change', function () {
+      if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'enabled');
+      } else {
+        localStorage.setItem('darkMode', 'disabled');
+      }
     });
+  });
   </script>
 </body>
 </html>
