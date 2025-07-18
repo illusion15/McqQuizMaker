@@ -8,6 +8,14 @@ from io import BytesIO
 import re
 from collections import Counter
 import platform
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image as ReportLabImage, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+import os
+from zipfile import ZipFile
+import io
 
 app = Flask(__name__, template_folder='.')
 
@@ -30,50 +38,59 @@ def index():
 def extract_questions_from_pdf(pdf_data):
     doc = fitz.open(stream=pdf_data, filetype="pdf")
     questions = []
-    images = {}
-    question_pages = {}  # Track which page each question appears on
+    current_question = None
+    current_images = []
+    question_pattern = re.compile(r"Q\d{3,4}\.")
+    page_question_count = {}
 
-    # First pass: extract images per page
     for page_number in range(len(doc)):
         page = doc.load_page(page_number)
+        text = page.get_text()
+        
+        # Extract images for this page
         page_images = []
         for img in page.get_images(full=True):
             xref = img[0]
             base_image = doc.extract_image(xref)
-            img_bytes = base_image["image"]
-            page_images.append(img_bytes)
-        if page_images:
-            images[page_number] = page_images
-
-    # Second pass: extract questions and track page numbers
-    full_text = ""
-    page_texts = []  # Store text per page for later matching
-    
-    for page_number in range(len(doc)):
-        page = doc.load_page(page_number)
-        text = page.get_text()
-        full_text += text + "\n"
-        page_texts.append(text)
+            page_images.append({
+                "bytes": base_image["image"],
+                "ext": base_image["ext"],
+                "width": base_image["width"],
+                "height": base_image["height"]
+            })
         
-        # Find question numbers on this page
-        question_matches = re.finditer(r"(Q\d{3,4})\.", text)
-        for match in question_matches:
-            q_num = match.group(1)
-            question_pages[q_num] = page_number
-
-    # Extract all questions from full text
-    question_blocks = re.findall(r"(Q\d{3,4}\..*?)(?=Q\d{3,4}\.|$)", full_text, re.DOTALL)
+        # Count questions on this page
+        question_matches = question_pattern.findall(text)
+        page_question_count[page_number] = len(question_matches)
+        
+        # Split text into lines for processing
+        lines = text.split('\n')
+        for line in lines:
+            if question_pattern.match(line.strip()):
+                # Save previous question if exists
+                if current_question:
+                    questions.append((current_question, current_images))
+                    current_images = []
+                
+                # Start new question
+                current_question = line
+                # Add images found so far to new question
+                current_images.extend(page_images)
+                page_images = []  # Reset for next images
+            elif current_question:
+                # Accumulate lines for current question
+                current_question += '\n' + line
+        
+        # After processing page, add any remaining images to current question
+        if current_question:
+            current_images.extend(page_images)
+            page_images = []
     
-    # Associate each question with images from its page
-    for block in question_blocks:
-        q_num_match = re.search(r"(Q\d{3,4})\.", block)
-        if q_num_match:
-            q_num = q_num_match.group(1)
-            page_num = question_pages.get(q_num, -1)
-            question_images = images.get(page_num, [])
-            questions.append((block, question_images))
+    # Add last question if exists
+    if current_question:
+        questions.append((current_question, current_images))
     
-    return questions
+    return questions, page_question_count
 
 def set_table_borders(table):
     tbl = table._tbl
@@ -101,16 +118,20 @@ def force_table_indent_and_widths(table):
         row.cells[0].width = Inches(1.5)
         row.cells[1].width = Inches(4.85)
 
-def process_question_block(block, positive, negative, images=None):
-    block_text = block[0] if isinstance(block, tuple) else block
-    images = block[1] if isinstance(block, tuple) and len(block) > 1 else []
-    
+def process_question_block(block, positive, negative):
+    block_text, images = block
     lines = [line.strip() for line in block_text.split("\n") if line.strip()]
     opts = []
     raw_options = []
     ans = ''
     sol_lines = []
     question_lines = []
+    
+    # Extract question number
+    q_num = ""
+    q_num_match = re.match(r"^(Q\d{3,4})\.", block_text.strip())
+    if q_num_match:
+        q_num = q_num_match.group(1)
 
     capturing_question = True
     capturing_option_index = -1
@@ -172,13 +193,124 @@ def process_question_block(block, positive, negative, images=None):
         "Solution": solution,
         "Positive Marks": positive,
         "Negative Marks": negative,
-        "Images": images  # Use only images from this question's page
+        "Images": images,
+        "Question Number": q_num
     }
 
+def generate_docx(questions):
+    """Generate DOCX document from processed questions"""
+    document = Document()
+    doc_stream = BytesIO()
+    
+    for data in questions:
+        # Create a table with question details
+        table = document.add_table(rows=10, cols=2)
+        table.autofit = False
+        force_table_indent_and_widths(table)
+        set_table_borders(table)
+
+        labels = ["Question", "Type", "Option", "Option", "Option", "Option",
+                "Answer", "Solution", "Positive Marks", "Negative Marks"]
+        values = [data["Question"], data["Type"]] + data["Options"][:4] + [
+            data["Answer"], data["Solution"], data["Positive Marks"], data["Negative Marks"]]
+
+        for i, (label, value) in enumerate(zip(labels, values)):
+            row = table.rows[i]
+            row.cells[0].text = label
+
+            if label == "Question":
+                row.cells[1].text = value
+                paragraph = row.cells[1].paragraphs[0]
+
+                # Insert images associated with this question
+                for img in data.get("Images", []):
+                    try:
+                        run = paragraph.add_run()
+                        run.add_break()  # Adding a line break before img
+                        run.add_picture(BytesIO(img["bytes"]), width=Inches(2))
+                    except Exception as e:
+                        print(f"Error adding image to DOCX: {e}")
+
+            else:
+                row.cells[1].text = re.sub(r"\s*\n\s*", " ", value).strip()
+
+        document.add_paragraph("")
+    
+    # Save document
+    document.save(doc_stream)
+    doc_stream.seek(0)
+    return doc_stream
+
+def generate_pdf(questions):
+    """Generate PDF document from processed questions"""
+    pdf_stream = BytesIO()
+    doc = SimpleDocTemplate(pdf_stream, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    for data in questions:
+        # Add question number as heading
+        if data["Question Number"]:
+            elements.append(Paragraph(f"<b>{data['Question Number']}</b>", styles["Heading2"]))
+        
+        # Add question text
+        elements.append(Paragraph(data["Question"], styles["Normal"]))
+        
+        # Add images
+        for img in data.get("Images", []):
+            try:
+                # Create reportlab image with proper aspect ratio
+                img_stream = BytesIO(img["bytes"])
+                aspect_ratio = img["height"] / img["width"]
+                img_width = 4 * inch  # Fixed width
+                img_height = img_width * aspect_ratio
+                
+                # Limit height if too tall
+                if img_height > 6 * inch:
+                    img_height = 6 * inch
+                    img_width = img_height / aspect_ratio
+                
+                # Add image to PDF
+                elements.append(ReportLabImage(img_stream, width=img_width, height=img_height))
+                elements.append(Spacer(1, 0.1 * inch))
+            except Exception as e:
+                print(f"Error adding image to PDF: {e}")
+        
+        # Create table for question details
+        table_data = [
+            ["Type", data["Type"]],
+            ["Option A", data["Options"][0]],
+            ["Option B", data["Options"][1]],
+            ["Option C", data["Options"][2]],
+            ["Option D", data["Options"][3]],
+            ["Answer", data["Answer"]],
+            ["Solution", data["Solution"]],
+            ["Positive Marks", data["Positive Marks"]],
+            ["Negative Marks", data["Negative Marks"]]
+        ]
+        
+        # Create PDF table
+        table = Table(table_data, colWidths=[1.5*inch, 5*inch])
+        table.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 1, colors.black),
+            ('FONT', (0,0), (-1,-1), 'Helvetica', 10),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ]))
+        
+        elements.append(table)
+        elements.append(Spacer(1, 0.3 * inch))
+    
+    # Build PDF document
+    doc.build(elements)
+    pdf_stream.seek(0)
+    return pdf_stream
 
 @app.route('/upload', methods=['POST'])
 def upload():
     pdf_file = request.files['pdf_file']
+    uploaded_data["original_filename"] = pdf_file.filename.rsplit('.', 1)[0]  # remove extension
     uploaded_data["positive"] = request.form.get('positive', '2')
     uploaded_data["negative"] = request.form.get('negative', '0.25')
 
@@ -192,7 +324,7 @@ def upload():
         except ValueError:
             return "❌ Invalid range input. Please enter valid numbers or check 'Generate all questions'.", 400
 
-    blocks = extract_questions_from_pdf(pdf_file.read())
+    blocks, page_question_count = extract_questions_from_pdf(pdf_file.read())
     uploaded_data["blocks"] = blocks
 
     errors = []
@@ -200,6 +332,12 @@ def upload():
     option_issues = []
     repeated_questions = []
     pattern = r"Q(\d{3,4})\."
+    multi_page_warnings = []
+
+    # Generate multi-page warnings
+    for page_num, count in page_question_count.items():
+        if count > 1:
+            multi_page_warnings.append(f"Page {page_num+1} has {count} questions. Images on this page are associated with the first question that appears there.")
 
     for i, block in enumerate(blocks):
         block_text = block[0] if isinstance(block, tuple) else block
@@ -243,6 +381,7 @@ def upload():
     errors = errors or []
     option_issues = option_issues or []
     repeated_questions = repeated_questions or []
+    multi_page_warnings = multi_page_warnings or []
 
     return render_template("diagnose.html",
         total_qs=len(blocks),
@@ -256,18 +395,15 @@ def upload():
         repeated_questions=repeated_questions,
         questions_to_generate=questions_to_generate,
         gen_start=gen_start,
-        gen_end=gen_end
+        gen_end=gen_end,
+        multi_page_warnings=multi_page_warnings
     )
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    from zipfile import ZipFile
-    import io
-
     confirm = request.form.get("confirm", "no")
     output_format = request.form.get("format", "docx")
     blocks = uploaded_data["blocks"]
-    base = uploaded_data["base"]
     positive = uploaded_data["positive"]
     negative = uploaded_data["negative"]
     range_start = uploaded_data["range_start"]
@@ -290,62 +426,56 @@ def generate():
     if not selected_blocks:
         return "No questions found in the selected range.", 400
 
-    # Create DOCX in memory
-    doc_stream = io.BytesIO()
-    document = Document()
-
+    # Process all selected questions
+    processed_questions = []
     for block in selected_blocks:
-        # Pass only relevant images to processing
         data = process_question_block(block, positive, negative)
+        processed_questions.append(data)
 
-        # Create a table with question details
-        table = document.add_table(rows=10, cols=2)
-        table.autofit = False
-        force_table_indent_and_widths(table)
-        set_table_borders(table)
+    # Get a clean filename from the uploaded PDF name
+    base_name = re.sub(r'[\\/*?:"<>|]', "_", uploaded_data.get("original_filename", "Processed_MCQs"))
+    docx_filename = f"Bulk_Uploader_of_{base_name}.docx"
+    pdf_filename = f"Bulk_Uploader_of_{base_name}.pdf"
+    zip_filename = f"Bulk_Uploader_of_{base_name}.zip"
 
-        labels = ["Question", "Type", "Option", "Option", "Option", "Option",
-                  "Answer", "Solution", "Positive Marks", "Negative Marks"]
-        values = [data["Question"], data["Type"]] + data["Options"][:4] + [
-            data["Answer"], data["Solution"], data["Positive Marks"], data["Negative Marks"]]
-
-        for i, (label, value) in enumerate(zip(labels, values)):
-            row = table.rows[i]
-            row.cells[0].text = label
-
-            if label == "Question":
-                row.cells[1].text = value
-                paragraph = row.cells[1].paragraphs[0]
-
-                # Insert images associated with this question
-                for img_bytes in data.get("Images", []):
-                    run = paragraph.add_run()
-                    run.add_picture(BytesIO(img_bytes), width=Inches(4.5))
-
-            else:
-                row.cells[1].text = re.sub(r"\s*\n\s*", " ", value).strip()
-
-        document.add_paragraph("")
-
-    # Save document
-    document.save(doc_stream)
-    doc_stream.seek(0)
-
+    # Handle different output formats
     if output_format == "docx":
-        return send_file(doc_stream, as_attachment=True,
-                         download_name="Processed_MCQs.docx",
-                         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        docx_stream = generate_docx(processed_questions)
+        return send_file(
+            docx_stream,
+            as_attachment=True,
+            download_name=docx_filename,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
+    elif output_format == "pdf":
+        pdf_stream = generate_pdf(processed_questions)
+        return send_file(
+            pdf_stream,
+            as_attachment=True,
+            download_name=pdf_filename,
+            mimetype="application/pdf"
+        )
 
     elif output_format == "zip":
-        zip_stream = io.BytesIO()
+        # Create ZIP with both DOCX and PDF
+        docx_stream = generate_docx(processed_questions)
+        pdf_stream = generate_pdf(processed_questions)
+        
+        zip_stream = BytesIO()
         with ZipFile(zip_stream, 'w') as zipf:
-            zipf.writestr("Processed_MCQs.docx", doc_stream.getvalue())
+            zipf.writestr(docx_filename, docx_stream.getvalue())
+            zipf.writestr(pdf_filename, pdf_stream.getvalue())
+        
         zip_stream.seek(0)
-        return send_file(zip_stream, as_attachment=True,
-                         download_name="quiz_package.zip",
-                         mimetype="application/zip")
+        return send_file(
+            zip_stream,
+            as_attachment=True,
+            download_name=zip_filename,
+            mimetype="application/zip"
+        )
 
-    return "❌ Only DOCX and ZIP formats are supported on this server.", 400
+    return "❌ Only DOCX, PDF, and ZIP formats are supported on this server.", 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
