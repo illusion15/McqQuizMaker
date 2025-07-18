@@ -175,18 +175,24 @@ def upload():
         if match:
             num = int(match.group(1))
             base_numbers.append(num)
+            
+            # ✅ Sequence error check
             if i > 0 and base_numbers[i] != base_numbers[i-1] + 1:
                 errors.append(f"Issue at Q{base_numbers[i]} (expected Q{base_numbers[i-1] + 1})")
+        
+            # ✅ Count options properly by line, not globally
+            lines = block.strip().splitlines()
+            option_count = sum(1 for line in lines if re.match(r"^[A-Da-d][\.\)]\s*", line.strip()))
+            if option_count != 4:
+                option_issues.append(f"Q{num} has {option_count} options")
 
-        opts = len(re.findall(r"^(?:[a-zA-Z0-9]+[\.\)]|\([a-zA-Z0-9]+\))\s*", block, re.MULTILINE))
-        if opts != 4 and match:
-            option_issues.append(f"Q{match.group(1)} has {opts} options")
-
+    # ✅ Repeated questions
     counts = Counter(base_numbers)
     repeated_questions = [f"Q{num}" for num, count in counts.items() if count > 1]
 
     uploaded_data["base"] = base_numbers[0] if base_numbers else 1
 
+    # ✅ Filter for selected question range
     filtered_qnums = []
     questions_to_generate = 0
     for block in blocks:
@@ -199,6 +205,12 @@ def upload():
 
     gen_start = min(filtered_qnums) if filtered_qnums else uploaded_data["range_start"]
     gen_end = max(filtered_qnums) if filtered_qnums else uploaded_data["range_end"]
+
+# ✅ Ensure lists are not None
+    errors = errors or []
+    option_issues = option_issues or []
+    repeated_questions = repeated_questions or []
+
 
     return render_template("diagnose.html",
         total_qs=len(blocks),
@@ -217,6 +229,9 @@ def upload():
 
 @app.route('/generate', methods=['POST'])
 def generate():
+    from zipfile import ZipFile
+    import io
+
     confirm = request.form.get("confirm", "no")
     output_format = request.form.get("format", "docx")
     blocks = uploaded_data["blocks"]
@@ -242,6 +257,8 @@ def generate():
     if not selected_blocks:
         return "No questions found in the selected range.", 400
 
+    # Create DOCX in memory
+    doc_stream = io.BytesIO()
     document = Document()
 
     for block in selected_blocks:
@@ -259,19 +276,29 @@ def generate():
         for i, (label, value) in enumerate(zip(labels, values)):
             row = table.rows[i]
             row.cells[0].text = label
-            if label == "Question":
-                row.cells[1].text = value  # 🔁 allow line breaks for extra options
-            else:
-                row.cells[1].text = re.sub(r"\s*\n\s*", " ", value).strip()
+            row.cells[1].text = value if label == "Question" else re.sub(r"\s*\n\s*", " ", value).strip()
 
         document.add_paragraph("")
 
-    output_stream = BytesIO()
-    document.save(output_stream)
-    output_stream.seek(0)
-    return send_file(output_stream, as_attachment=True,
-                     download_name='Processed_MCQs.docx',
-                     mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    document.save(doc_stream)
+    doc_stream.seek(0)
+
+    if output_format == "docx":
+        return send_file(doc_stream, as_attachment=True,
+                         download_name="Processed_MCQs.docx",
+                         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+    elif output_format == "zip":
+        zip_stream = io.BytesIO()
+        with ZipFile(zip_stream, 'w') as zipf:
+            zipf.writestr("Processed_MCQs.docx", doc_stream.getvalue())
+        zip_stream.seek(0)
+        return send_file(zip_stream, as_attachment=True,
+                         download_name="quiz_package.zip",
+                         mimetype="application/zip")
+
+    return "❌ Only DOCX and ZIP formats are supported on this server.", 400
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)

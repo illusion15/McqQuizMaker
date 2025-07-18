@@ -36,7 +36,9 @@
   margin: 0;
   padding: 0;
 }
-
+html{
+  scroll-behavior: smooth;
+}
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   margin: 0;
@@ -56,15 +58,15 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-  color: white;
-  font-size: 1.2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
 }
-
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -74,12 +76,21 @@ header {
   margin: 0 auto;
 }
 
+body.dark-mode header {
+  background: rgba(18, 24, 38, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
 .logo {
   display: flex;
   align-items: center;
   gap: 12px;
   font-weight: 600;
   font-size: 1.3rem;
+}
+.logo:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .logo i {
@@ -104,43 +115,28 @@ header {
   align-items: center;
   gap: 10px;
 }
-
-.toggle-mode {
+.toggle-container button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 30px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  background-color: rgba(0, 0, 0, 0.06); /* soft gray for visibility */
+  color: var(--text-light);
   position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 30px;
-  cursor: pointer;
+  top: 0rem;
 }
 
-.toggle-mode input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+body.dark-mode .toggle-container button {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-dark);
 }
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+.toggle-container button:hover {
+  background-color: rgba(0, 0, 0, 0.12); /* slightly darker on hover */
 }
 
 input:checked + .toggle-slider {
@@ -156,6 +152,19 @@ input:checked + .toggle-slider:before {
   font-weight: 500;
 }
 
+@media (max-width: 768px) {
+  .toggle-container {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .header-content {
+    position: relative;
+    width: 100%;
+  }
+}
 .hero {
   background: linear-gradient(
     135deg,
@@ -770,8 +779,8 @@ body.dark-mode .comparison-description {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
   margin-top: 2rem;
+  align-items: stretch; /* ✅ ensures all children fill equally */
 }
-
 .testimonial {
   background: var(--bg-card-light);
   padding: 2rem;
@@ -780,8 +789,11 @@ body.dark-mode .comparison-description {
   text-align: left;
   position: relative;
   transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* key to equal height */
 }
-
 .testimonial:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-hover);
@@ -851,12 +863,18 @@ body.dark-mode .author-role {
 }
 
 footer {
-  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   padding: 2rem;
   text-align: center;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
 }
-
+body.dark-mode footer {
+  background: rgba(18, 24, 38, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
 .footer-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -871,12 +889,15 @@ footer {
 }
 
 .footer-links a {
-  color: white;
+  color: var(--text-light);
   text-decoration: none;
   transition: opacity 0.3s;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+body.dark-mode .footer-links a {
+  color: var(--text-dark);
 }
 
 .footer-links a:hover {
@@ -997,18 +1018,17 @@ footer {
   </style>
 </head>
 <body>
+  <div id="top"></div>
   <header>
     <div class="header-content">
-      <div class="logo">
+      <a href="#top" class="logo" id="logoHeader" style="text-decoration: none; color: inherit;">
         <i class="fas fa-file-alt"></i>
         <span>Quiz Maker</span>
-      </div>
+      </a>
       <div class="toggle-container">
-        <span class="toggle-label">Dark Mode</span>
-        <label class="toggle-mode">
-          <input type="checkbox" onchange="document.body.classList.toggle('dark-mode')">
-          <span class="toggle-slider"></span>
-        </label>
+        <button id="modeToggle" title="Toggle Dark Mode">
+          <i id="modeIcon" class="fas fa-moon"></i>
+        </button>
       </div>
     </div>
   </header>
@@ -1124,7 +1144,7 @@ footer {
         <label for="generate_all">Generate all questions from the document</label>
       </div>
       
-      <div class="divider-line, dark-mode">Or be specific:</div>
+      <div class="divider-line dark-mode">Or be specific:</div>
 
       <div class="form-grid">
         <div class="form-group">
@@ -1194,7 +1214,7 @@ footer {
         <div class="testimonial-author">
           <div class="author-avatar">S</div>
           <div class="author-info">
-            <h4>-Suju</h4>
+            <h4>Manish</h4>
             <div class="author-role">Mentor</div>
           </div>
         </div>
@@ -1204,10 +1224,10 @@ footer {
 
   <footer>
     <div class="footer-content">
-      <div class="logo">
+      <a href="#" class="logo" id="logoFooter" style="text-decoration: none; color: inherit;">
         <i class="fas fa-file-alt"></i>
-        <span>MCQ Quiz Maker</span>
-      </div>
+        <span>Quiz Maker</span>
+      </a>
       <div class="footer-links">
         <a href="#"><i class="fas fa-question-circle"></i> Help Center</a>
         <a href="#"><i class="fas fa-envelope"></i> Contact Us</a>
@@ -1327,20 +1347,37 @@ footer {
     reader.readAsArrayBuffer(file);
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
+    const body = document.body;
+    const toggleBtn = document.getElementById('modeToggle');
+    const icon = document.getElementById('modeIcon');
+
+    // Load dark mode from localStorage
     if (localStorage.getItem('darkMode') === 'enabled') {
-      document.body.classList.add('dark-mode');
-      document.querySelector('.toggle-mode input').checked = true;
+      body.classList.add('dark-mode');
     }
 
-    document.querySelector('.toggle-mode input').addEventListener('change', function () {
-      if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('darkMode', 'enabled');
-      } else {
-        localStorage.setItem('darkMode', 'disabled');
-      }
+    updateIcon();
+
+    toggleBtn.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+      updateIcon();
     });
+
+    function updateIcon() {
+      icon.className = body.classList.contains('dark-mode') ? 'fas fa-sun' : 'fas fa-moon';
+    }
   });
+  </script>
+  <script>
+    // Disable range fields if "Generate all" is checked
+    document.getElementById("generate_all").addEventListener("change", function () {
+      const disabled = this.checked;
+      document.getElementById("range_start").disabled = disabled;
+      document.getElementById("range_end").disabled = disabled;
+    });
+
   </script>
 </body>
 </html>
