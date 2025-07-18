@@ -59,101 +59,88 @@ def force_table_indent_and_widths(table):
         row.cells[1].width = Inches(4.85)
 
 def process_question_block(block, positive, negative):
-    # ✅ Remove question number prefix like Q308. before splitting
-    block = re.sub(r"^Q\d{3,4}\.\s*", "", block.strip(), flags=re.IGNORECASE)
-    lines = [line.rstrip() for line in block.split("\n") if line.strip()]
-    opts, sol_lines = [], []
+    lines = [line.strip() for line in block.split("\n") if line.strip()]
+    
+    opts = []
+    raw_options = []
+    ans = ''
+    sol_lines = []
     question_lines = []
-    ans_token = None
+    
     capturing_question = True
+    capturing_option_index = -1
     capturing_solution = False
-    capturing_options = False
-    option_pattern = r"^(?:[a-zA-Z0-9]+[\.\)]|\([a-zA-Z0-9]+\))\s*"
 
     for i, line in enumerate(lines):
-        line = line.strip()
+        # Option line (A., B), etc.)
+        if re.match(r"^[A-Da-d][\.\)]\s*", line):
+            capturing_question = False
+            capturing_solution = False
 
-        # Detect and capture correct answer
-        if line.lower().startswith("correct answer"):
-            capturing_question = capturing_solution = capturing_options = False
-            match = re.search(r"([a-zA-Z\d])", line)
+            raw_options.append(line)
+            option_text = re.sub(r"^[A-Da-d][\.\)]\s*", "", line).strip()
+            opts.append(option_text)
+            capturing_option_index = len(opts) - 1
+
+        # Continuation of previous option
+        elif capturing_option_index != -1 and not line.lower().startswith("correct answer") and not line.lower().startswith("solution"):
+            opts[capturing_option_index] += ' ' + line.strip()
+            raw_options[-1] += ' ' + line.strip()
+
+        # Correct answer
+        elif line.lower().startswith("correct answer"):
+            match = re.search(r"(\d+)", line)
             if match:
-                ans_token = match.group(1)
-            continue
+                ans = match.group(1)
+            capturing_option_index = -1
+            capturing_solution = False
 
-        # Detect and capture solution
-        if line.lower().startswith("solution"):
-            capturing_question = capturing_options = False
+        # Solution start
+        elif line.lower().startswith("solution"):
+            sol_line = line.split(":", 1)[-1].strip()
+            sol_lines.append(sol_line)
             capturing_solution = True
-            parts = line.split(":", 1)
-            sol_lines.append(parts[1].strip() if len(parts) > 1 else "")
-            continue
+            capturing_option_index = -1
 
-        if capturing_solution:
-            sol_lines.append(line)
-            continue
+        # Solution continuation
+        elif capturing_solution:
+            sol_lines.append(line.strip())
 
-        # Detect start of a new option
-        if re.match(option_pattern, line):
-            capturing_question = capturing_solution = False
-            capturing_options = True
-            opts.append(line)
-            continue
-
-        # Continue an option line (multi-line option)
-        if capturing_options and opts:
-            if line.lower().startswith("solution"):  # if solution missed initial detection
-                capturing_options = False
-                capturing_solution = True
-                parts = line.split(":", 1)
-                sol_lines.append(parts[1].strip() if len(parts) > 1 else "")
-            else:
-                opts[-1] += " " + line
-            continue
-
-        # Default: assume part of the question
-        if capturing_question:
+        # Question lines
+        elif capturing_question:
+            line = re.sub(r"^Q\d{3,4}\.\s*", "", line)
             question_lines.append(line)
 
-
-    # ✅ Join question lines cleanly into one paragraph
-    q = " ".join(question_lines).replace("  ", " ").strip()
-    sol = " ".join(sol_lines).strip()
-    total_opts = len(opts)
-    table_opts = ["", "", "", ""]
-    ans = ""
-    note = ""
-
-    if total_opts > 0:
-        if ans_token:
-            if ans_token.isdigit():
-                num = int(ans_token)
-            else:
-                num = ord(ans_token.lower()) - ord('a') + 1
-            if 1 <= num <= total_opts:
-                if total_opts > 4:
-                    if num > total_opts - 4:
-                        ans = str(num - (total_opts - 4))
-                else:
-                    ans = str(num)
-
-        if total_opts > 4:
-            extra_options = opts[:total_opts-4]
-            extra_text = "\n" + "\n".join(extra_options)
-            q += extra_text
-            table_opts = [re.sub(option_pattern, "", opt, 1).strip() for opt in opts[total_opts-4:]]
-        else:
-            table_opts = [re.sub(option_pattern, "", opt, 1).strip() for opt in opts]
-            table_opts += [""] * (4 - total_opts)
+    # Handle extra options logic
+    if len(opts) <= 4:
+        final_options = opts + ["", "", "", ""][len(opts):]  # pad to 4 options
     else:
-        table_opts = ["", "", "", ""]
+        extra_raw_opts = raw_options[:-4]        # preserve full original-labeled text
+        core_opts = opts[-4:]                    # last 4 cleaned options
+        core_opts = core_opts[::-1]              # reverse for your rule
+        question_lines.extend(extra_raw_opts)    # append extras to question
+
+        final_options = core_opts
+
+    # Join question text as a single string
+    q = " ".join(question_lines)
+
+    # ✅ If common list patterns detected, insert line breaks before them
+    if " A." in q and " B." in q:
+        q = re.sub(r'\s([A-Da-d][\.\)])', r'\n\1', q)
+
+    elif "1." in q and "2." in q:
+        q = re.sub(r'\s(\d{1,2}\.)', r'\n\1', q)
+
+    # Join multiline solution
+    solution = " ".join(sol_lines).strip()
 
     return {
-        "Question": q,
+        "Question": q.strip(),
         "Type": "multiple_choice",
-        "Options": table_opts,
+        "Options": final_options,
         "Answer": ans,
-        "Solution": sol,
+        "Solution": solution,
         "Positive Marks": positive,
         "Negative Marks": negative
     }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnostic Report | MCQ Quiz Maker</title>
+    <title>Diagnostic Report | Quiz Maker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -302,6 +302,9 @@ body.dark-mode .issue-list li {
   margin-bottom: 0.5rem;
   color: var(--text-light);
   font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 body.dark-mode .issue-title {
@@ -314,6 +317,8 @@ body.dark-mode .issue-title {
   border-radius: calc(var(--radius) - 4px);
   margin-top: 1rem;
   list-style-type: none;
+  max-height: 250px;
+  overflow-y: auto;
 }
 
 body.dark-mode .issue-sub-list {
@@ -426,6 +431,9 @@ body.dark-mode .issue-sub-list li {
   color: white;
   box-shadow: 0 4px 10px rgba(6, 214, 160, 0.3);
   animation: pulse 2s infinite;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .status-badge.warning {
@@ -473,6 +481,124 @@ body.dark-mode .issue-sub-list li {
   }
 }
 
+/* New Features */
+/* Tooltips */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 250px;
+  background-color: var(--primary-dark);
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  padding: 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.9rem;
+  font-weight: normal;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.tooltip .tooltiptext::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--primary-dark) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Expand/Collapse */
+.toggle-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 5px 10px;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 4px;
+}
+
+.toggle-btn:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+body.dark-mode .toggle-btn {
+  color: var(--accent);
+}
+
+body.dark-mode .toggle-btn:hover {
+  background-color: rgba(255,255,255,0.05);
+}
+
+.collapsed .issue-sub-list {
+  max-height: 150px;
+  overflow-y: hidden;
+}
+
+/* Issue counters */
+.issue-counter {
+  background: rgba(0,0,0,0.1);
+  color: var(--text-light);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+body.dark-mode .issue-counter {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-dark);
+}
+
+.issue-counter.warning {
+  background: var(--warning);
+  color: #333;
+}
+
+.issue-counter.error {
+  background: var(--danger);
+  color: white;
+}
+
+.issue-counter.success {
+  background: var(--success);
+  color: white;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary-light);
+}
+
+body.dark-mode .empty-state {
+  color: var(--text-secondary-dark);
+}
+
 @media (max-width: 768px) {
   .container {
     margin: 1.5rem;
@@ -499,6 +625,12 @@ body.dark-mode .issue-sub-list li {
   .btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  .status-badge {
+    position: static;
+    margin: 0 auto 20px;
+    width: fit-content;
   }
 }
 
@@ -527,13 +659,35 @@ body.dark-mode .issue-sub-list li {
         <div class="header-content">
             <div class="logo">
                 <i class="fas fa-file-alt"></i>
-                <span>MCQ Quiz Maker</span>
+                <span>Quiz Maker</span>
             </div>
         </div>
     </header>
 
     <div class="container">
-        <div class="status-badge">Ready to Generate</div>
+        <!-- Dynamic status badge -->
+        <div class="status-badge 
+            {% if errors or option_issues or repeated_questions %} 
+                {% if errors %}danger{% else %}warning{% endif %}
+            {% endif %}">
+            <i class="fas 
+                {% if not errors and not option_issues and not repeated_questions %}
+                    fa-check-circle
+                {% elif errors %}
+                    fa-exclamation-circle
+                {% else %}
+                    fa-exclamation-triangle
+                {% endif %}">
+            </i>
+            {% if not errors and not option_issues and not repeated_questions %}
+                Ready to Generate
+            {% elif errors %}
+                Critical Issues Found
+            {% else %}
+                Issues Detected
+            {% endif %}
+        </div>
+        
         <h1 class="page-title">Diagnostic Report</h1>
         
         <div class="report-card">
@@ -561,6 +715,19 @@ body.dark-mode .issue-sub-list li {
                     <div class="summary-value">{{ questions_to_generate }}</div>
                     <div class="summary-label">Questions to Generate</div>
                 </div>
+                
+                <!-- Issue Counters -->
+                <div class="summary-item">
+                    <i class="fas fa-exclamation-triangle summary-icon"></i>
+                    <div class="summary-value">{{ (option_issues|length) + (repeated_questions|length) }}</div>
+                    <div class="summary-label">Warnings Found</div>
+                </div>
+                
+                <div class="summary-item">
+                    <i class="fas fa-exclamation-circle summary-icon"></i>
+                    <div class="summary-value">{{ errors|length }}</div>
+                    <div class="summary-label">Errors Found</div>
+                </div>
             </div>
             
             <div class="report-section">
@@ -570,6 +737,8 @@ body.dark-mode .issue-sub-list li {
                 </h3>
                 
                 <ul class="issue-list">
+                    <!-- Sequence status (conditional) -->
+                    {% if not errors and not repeated_questions %}
                     <li class="success-item">
                         <i class="fas fa-check-circle success-icon issue-icon"></i>
                         <div class="issue-content">
@@ -577,7 +746,17 @@ body.dark-mode .issue-sub-list li {
                             <p>From <strong>Q{{ actual_start }}</strong> to <strong>Q{{ actual_end }}</strong></p>
                         </div>
                     </li>
+                    {% else %}
+                    <li class="danger-item">
+                        <i class="fas fa-exclamation-circle danger-icon issue-icon"></i>
+                        <div class="issue-content">
+                            <div class="issue-title">Sequence issues detected</div>
+                            <p>Questions may be missing or out of order</p>
+                        </div>
+                    </li>
+                    {% endif %}
                     
+                    <!-- Questions to generate (always shown) -->
                     <li class="success-item">
                         <i class="fas fa-check-circle success-icon issue-icon"></i>
                         <div class="issue-content">
@@ -586,41 +765,119 @@ body.dark-mode .issue-sub-list li {
                         </div>
                     </li>
                     
+                    <!-- Repeated questions (conditional) -->
+                    {% if repeated_questions %}
                     <li class="warning-item">
-                        <i class="fas fa-exclamation-triangle error-icon issue-icon"></i>
+                        <i class="fas fa-exclamation-triangle warning-icon issue-icon"></i>
                         <div class="issue-content">
-                            <div class="issue-title">Repeated questions detected ({{repeated_questions}} total)</div>
-                            <ul class="issue-sub-list">
-                                <li>Question {{repeated_questions}} appears multiple times</li>
-                                <li>Question {{repeated_questions}} appears multiple times</li>
-                                <li>Question {{repeated_questions}} appears multiple times</li>
-                            </ul>
+                            <div class="issue-title">
+                                Repeated questions detected
+                                <span class="issue-counter warning">{{ repeated_questions|length }}</span>
+                                <span class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Questions with duplicate numbers may cause processing errors</span>
+                                </span>
+                            </div>
+                            <div class="collapsed" id="repeated-list">
+                                <ul class="issue-sub-list">
+                                    {% for q in repeated_questions %}
+                                    <li>{{ q }} appears multiple times</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% if repeated_questions|length > 3 %}
+                            <button class="toggle-btn" data-target="repeated-list">
+                                <i class="fas fa-chevron-down"></i>
+                                Show All ({{ repeated_questions|length }})
+                            </button>
+                            {% endif %}
                         </div>
                     </li>
-                    
-                    <li class="warning-item">
-                        <i class="fas fa-exclamation-triangle error-icon issue-icon"></i>
+                    {% else %}
+                    <li class="success-item">
+                        <i class="fas fa-check-circle success-icon issue-icon"></i>
                         <div class="issue-content">
-                            <div class="issue-title">Questions with incorrect number of options</div>
-                            <ul class="issue-sub-list">
-                                <li>Question #105 has only 3 options (expected 4)</li>
-                                <li>Question #122 has 5 options (expected 4)</li>
-                                <li>Question #146 has 2 options (expected 4)</li>
-                            </ul>
+                            <div class="issue-title">No repeated questions detected</div>
+                            <p>All question numbers are unique</p>
                         </div>
                     </li>
+                    {% endif %}
                     
+                    <!-- Option issues (conditional) -->
+                    {% if option_issues %}
+                    <li class="warning-item">
+                        <i class="fas fa-exclamation-triangle warning-icon issue-icon"></i>
+                        <div class="issue-content">
+                            <div class="issue-title">
+                                Questions with non-standard options
+                                <span class="issue-counter warning">{{ option_issues|length }}</span>
+                                <span class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Questions with unexpected option counts may not format correctly</span>
+                                </span>
+                            </div>
+                            <div class="collapsed" id="option-issues-list">
+                                <ul class="issue-sub-list">
+                                    {% for issue in option_issues %}
+                                    <li>{{ issue }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% if option_issues|length > 3 %}
+                            <button class="toggle-btn" data-target="option-issues-list">
+                                <i class="fas fa-chevron-down"></i>
+                                Show All ({{ option_issues|length }})
+                            </button>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="success-item">
+                        <i class="fas fa-check-circle success-icon issue-icon"></i>
+                        <div class="issue-content">
+                            <div class="issue-title">All questions have standard options</div>
+                            <p>No issues found with question options</p>
+                        </div>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- Sequence errors (conditional) -->
+                    {% if errors %}
                     <li class="danger-item">
-                        <i class="fas fa-exclamation-circle error-icon issue-icon"></i>
+                        <i class="fas fa-exclamation-circle danger-icon issue-icon"></i>
                         <div class="issue-content">
-                            <div class="issue-title">Sequence issues found</div>
-                            <ul class="issue-sub-list">
-                                <li>Missing question #115</li>
-                                <li>Missing question #132</li>
-                                <li>Question #143 appears out of order</li>
-                            </ul>
+                            <div class="issue-title">
+                                Sequence issues found
+                                <span class="issue-counter error">{{ errors|length }}</span>
+                                <span class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltiptext">Missing or out-of-order questions may indicate document issues</span>
+                                </span>
+                            </div>
+                            <div class="collapsed" id="sequence-errors-list">
+                                <ul class="issue-sub-list">
+                                    {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% if errors|length > 3 %}
+                            <button class="toggle-btn" data-target="sequence-errors-list">
+                                <i class="fas fa-chevron-down"></i>
+                                Show All ({{ errors|length }})
+                            </button>
+                            {% endif %}
                         </div>
                     </li>
+                    {% else %}
+                    <li class="success-item">
+                        <i class="fas fa-check-circle success-icon issue-icon"></i>
+                        <div class="issue-content">
+                            <div class="issue-title">No sequence issues found</div>
+                            <p>Question numbers are in perfect order</p>
+                        </div>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
             
@@ -644,6 +901,38 @@ body.dark-mode .issue-sub-list li {
             if(localStorage.getItem('darkMode') === 'enabled') {
                 document.body.classList.add('dark-mode');
             }
+            
+            // Expand/Collapse functionality
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const targetElement = document.getElementById(targetId);
+                    
+                    if (targetElement.classList.contains('collapsed')) {
+                        targetElement.classList.remove('collapsed');
+                        this.innerHTML = '<i class="fas fa-chevron-up"></i> Show Less';
+                    } else {
+                        targetElement.classList.add('collapsed');
+                        this.innerHTML = '<i class="fas fa-chevron-down"></i> Show All';
+                    }
+                });
+            });
+            
+            // Tooltip positioning
+            const tooltips = document.querySelectorAll('.tooltip');
+            tooltips.forEach(tooltip => {
+                tooltip.addEventListener('mouseover', function() {
+                    const tooltipText = this.querySelector('.tooltiptext');
+                    const rect = this.getBoundingClientRect();
+                    
+                    // Position tooltip above the icon
+                    tooltipText.style.bottom = '100%';
+                    tooltipText.style.top = 'auto';
+                    tooltipText.style.left = '50%';
+                    tooltipText.style.transform = 'translateX(-50%)';
+                });
+            });
         });
     </script>
     

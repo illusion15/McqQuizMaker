@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Free MCQ Quiz Maker | Transform PDFs into Quizzes</title>
+  <title>Quiz Maker | Transform PDFs into Quizzes</title>
   <meta name="description" content="Upload a PDF and auto-generate quizzes in DOCX, PDF, or ZIP." />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -579,6 +579,18 @@ body.dark-mode #preview {
   color: var(--text-dark);
 }
 
+.divider-line{
+  color: var(--text-light);
+  font-weight: 500;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  margin-bottom: 5px;
+}
+.divider-line.dark-mode{
+  color: var(--text-dark);
+  font-weight: 500;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
 .no-preview {
   display: flex;
   flex-direction: column;
@@ -729,6 +741,21 @@ body.dark-mode .comparison-card {
 
 body.dark-mode .comparison-description {
   color: var(--text-secondary-dark);
+}
+
+#imp-instruction{
+  display: flex;
+  flex-direction: column;
+  padding: 10px 20px;
+  text-align: left;
+}
+
+#imp-instruction strong{
+  font-weight: 500;
+}
+#imp-instruction p{
+  margin-left: 1.1rem;
+  margin-top: 10px;
 }
 
 .testimonial-section {
@@ -974,7 +1001,7 @@ footer {
     <div class="header-content">
       <div class="logo">
         <i class="fas fa-file-alt"></i>
-        <span>MCQ Quiz Maker</span>
+        <span>Quiz Maker</span>
       </div>
       <div class="toggle-container">
         <span class="toggle-label">Dark Mode</span>
@@ -987,9 +1014,9 @@ footer {
   </header>
 
   <section class="hero">
-    <h1>Transform Your PDFs into Engaging Quizzes</h1>
-    <p>Our AI-powered tool instantly converts your PDF documents into professional multiple-choice quizzes, saving you hours of manual work</p>
-    <a href="#uploadForm" class="cta-button">Get Started Now</a>
+    <h1>Bulk PDF Question Converter to Tabular Quiz Format</h1>
+    <p>Quickly convert question-based PDFs into structured multiple-choice tables — no manual copy-pasting needed. Ideal for educators and content creators streamlining quiz creation and bulk uploads.</p>
+    <a href="#uploadForm" class="cta-button">Start Now</a>
   </section>
 
   <section class="features">
@@ -998,7 +1025,7 @@ footer {
         <i class="fas fa-bolt"></i>
       </div>
       <h3 class="feature-title">Lightning Fast Conversion</h3>
-      <p class="feature-desc">Upload your PDF and get quiz-ready documents in seconds. No more manual question creation.</p>
+      <p class="feature-desc">Upload your PDF with questions and options, and receive quiz-ready documents in seconds. Say goodbye to tedious copy-pasting.</p>
     </div>
     
     <div class="feature-card">
@@ -1006,38 +1033,47 @@ footer {
         <i class="fas fa-cogs"></i>
       </div>
       <h3 class="feature-title">Advanced Customization</h3>
-      <p class="feature-desc">Set scoring parameters, select question ranges, and choose from multiple output formats.</p>
+      <p class="feature-desc">Set scoring parameters, choose specific question ranges from the full set, and generate your quiz in multiple output formats — including DOC, PDF, or ZIP.</p>
     </div>
     
     <div class="feature-card">
       <div class="feature-icon">
-        <i class="fas fa-check-double"></i>
+        <i class="fas fa-clipboard-list"></i>
       </div>
-      <h3 class="feature-title">Intelligent Diagnostics</h3>
-      <p class="feature-desc">Our system analyzes your document for potential issues before generating the final quiz.</p>
+      <h3 class="feature-title">Diagnostics Report</h3>
+      <p class="feature-desc">Get a fast overview of your file before generating the file— including question count and formatting problems.</p>
     </div>
   </section>
 
   <!-- Transformation Showcase Section -->
 <section class="transformation-section">
-    <h2 class="section-title">See the Transformation</h2>
+    <h2 class="section-title">The Change at a Glance</h2>
     <div class="comparison-container">
         <div class="comparison-card">
-            <h3 class="comparison-title">Original PDF Content</h3>
+            <h3 class="comparison-title">Before</h3>
             <img src="{{ url_for('static', filename='image/before.png') }}" alt="Original PDF Content" class="comparison-image">
-            <p class="comparison-description">Your original PDF content with questions and answers in standard format.</p>
+            <p class="comparison-description">Upload your PDF with questions and options using the standard format.
+            (You can leave out any section that's missing.)</p>
+            <div id="imp-instruction">
+                <strong><i class="fas fa-exclamation-circle"></i> Important:</strong> 
+                <h5>The following elements are required for proper detection. Please make sure to include:</h5>
+                <p>1. "Q..." at the beginning of each question</p>
+                <p>2. Listed options (e.g., A., 1., or i.)</p>
+                <p>3. "correct answer"</p>
+                <p>4. "solution"</p>
+            </div>
         </div>
 
         <div class="comparison-card">
-            <h3 class="comparison-title">Transformed MCQ Quiz</h3>
+            <h3 class="comparison-title">After</h3>
             <img src="{{ url_for('static', filename='image/after.png') }}" alt="Formatted Quiz Output" class="comparison-image">
-            <p class="comparison-description">Professionally formatted quiz with options, correct answers, and point values.</p>
+            <p class="comparison-description">Once you upload your PDF, the system will extract your questions and format them into a quiz. You can define correct answers and assign marks — including bonus points for correct answers and penalties for wrong ones.</p>
         </div>
     </div>
 </section>
 
   <div class="container">
-    <h1 class="form-title">Create Your MCQ Quiz</h1>
+    <h1 class="form-title">Convert into table</h1>
     
       <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
       <div class="form-group">
@@ -1069,21 +1105,6 @@ footer {
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="range_start"><i class="fas fa-list-ol"></i> Question Range Start</label>
-          <div class="input-icon">
-            <i class="fas fa-play"></i>
-            <input type="number" id="range_start" name="range_start" placeholder="e.g., 101" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="range_end"><i class="fas fa-list-ol"></i> Question Range End</label>
-          <div class="input-icon">
-            <i class="fas fa-stop"></i>
-            <input type="number" id="range_end" name="range_end" placeholder="e.g., 150" />
-          </div>
-        </div>
       </div>
 
       <div class="form-group">
@@ -1102,10 +1123,30 @@ footer {
         <input type="checkbox" id="generate_all" name="generate_all" value="yes" />
         <label for="generate_all">Generate all questions from the document</label>
       </div>
+      
+      <div class="divider-line, dark-mode">Or be specific:</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="range_start"><i class="fas fa-list-ol"></i> Question Range Start</label>
+          <div class="input-icon">
+            <i class="fas fa-play"></i>
+            <input type="number" id="range_start" name="range_start" placeholder="e.g., 001" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="range_end"><i class="fas fa-list-ol"></i> Question Range End</label>
+          <div class="input-icon">
+            <i class="fas fa-stop"></i>
+            <input type="number" id="range_end" name="range_end" placeholder="e.g., 150" />
+          </div>
+        </div>
+      </div>
 
       <button type="submit">
+        View Report & Generate 
         <i class="fas fa-rocket"></i>
-        Generate & Diagnose
       </button>
     </form>
 
@@ -1124,37 +1165,37 @@ footer {
   </div>
 
   <section class="testimonial-section">
-    <h2 class="section-title">Trusted by Educators</h2>
+    <h2 class="section-title">💬 Review Feedbacks:</h2>
     <div class="testimonials">
       <div class="testimonial">
-        <p class="testimonial-text">This tool has revolutionized how I create quizzes for my classes. What used to take hours now takes minutes!</p>
+        <p class="testimonial-text">“This tool has completely changed the way I prepare quizzes. What used to take hours now takes just minutes!”</p>
         <div class="testimonial-author">
           <div class="author-avatar">P</div>
           <div class="author-info">
             <h4>Parmar SSC</h4>
-            <div class="author-role">Gov. exam prepearing Teacher</div>
+            <div class="author-role">SSC/Railway/Banking Faculty</div>
           </div>
         </div>
       </div>
       
       <div class="testimonial">
-        <p class="testimonial-text">The diagnostic report caught several issues in my PDF that I would have missed. It's like having a teaching assistant!</p>
+        <p class="testimonial-text">“The diagnostic report flagged issues I would’ve easily missed in my PDFs. It’s like having an extra pair of expert eyes!”</p>
         <div class="testimonial-author">
-          <div class="author-avatar">MR</div>
+          <div class="author-avatar">SS</div>
           <div class="author-info">
-            <h4>Michael Rodriguez</h4>
+            <h4>Sanjog Saini</h4>
             <div class="author-role">University Professor</div>
           </div>
         </div>
       </div>
       
       <div class="testimonial">
-        <p class="testimonial-text">As a corporate trainer, I need to create assessments quickly. This tool has cut my prep time by 70%.</p>
+        <p class="testimonial-text">"2 min me Maggi bane na bane, quiz zarur ban jaata hai! 😄"</p>
         <div class="testimonial-author">
-          <div class="author-avatar">TP</div>
+          <div class="author-avatar">S</div>
           <div class="author-info">
-            <h4>Thomas Parker</h4>
-            <div class="author-role">Corporate Trainer</div>
+            <h4>-Suju</h4>
+            <div class="author-role">Mentor</div>
           </div>
         </div>
       </div>
@@ -1173,7 +1214,7 @@ footer {
         <a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a>
       </div>
       <div class="copyright">
-        &copy; 2025 MCQ Quiz Maker. All rights reserved.
+        &copy; 2025 Quiz Maker. All rights reserved.
       </div>
     </div>
   </footer>

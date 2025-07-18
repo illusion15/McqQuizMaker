@@ -3,3 +3,4 @@ PyMuPDF
 python-docx
 docx2pdf; platform_system == "Windows"
 reportlab
+gunicorn
