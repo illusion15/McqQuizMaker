@@ -151,7 +151,56 @@ input:checked + .toggle-slider:before {
   font-size: 0.95rem;
   font-weight: 500;
 }
+/* --- Day/Night Toggle Switch --- */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 70px;
+  height: 36px;
+}
 
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #e0e0e0;
+  border-radius: 34px;
+  transition: background-color 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 30px;
+  width: 30px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ff9800; /* Sun color */
+  background-image: url("data:image/svg+xml,%3Csvg fill='white' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 4.5a1 1 0 011 1V7a1 1 0 01-2 0V5.5a1 1 0 011-1zm0 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm7.071-9.071a1 1 0 011.414 0l1.414 1.414a1 1 0 01-1.414 1.414L18.071 7.5a1 1 0 010-1.414zm-12.142 0a1 1 0 000 1.414L6.343 8.5a1 1 0 01-1.414-1.414L6.343 5.5a1 1 0 011.414 0zM4.5 12a1 1 0 011-1H7a1 1 0 010 2H5.5a1 1 0 01-1-1zm11.5 7.5a1 1 0 011-1h1.5a1 1 0 010 2H17a1 1 0 01-1-1zm-11-1a1 1 0 011 1v1.5a1 1 0 01-2 0V18.5a1 1 0 011-1zm14.071-2.071a1 1 0 010 1.414l-1.414 1.414a1 1 0 01-1.414-1.414L17.657 16a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 60%;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Checked mode (night) */
+input:checked + .slider {
+  background-color: #2c3e50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(34px);
+  background-color: #3f51b5; /* Moon background */
+  background-image: url("data:image/svg+xml,%3Csvg fill='white' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.75 15.5A9 9 0 0111 3.5a7 7 0 108.25 12z'/%3E%3C/svg%3E");
+}
 @media (max-width: 768px) {
   .toggle-container {
     position: absolute;
@@ -1026,9 +1075,10 @@ body.dark-mode .footer-links a {
         <span>Quiz Maker</span>
       </a>
       <div class="toggle-container">
-        <button id="modeToggle" title="Toggle Dark Mode">
-          <i id="modeIcon" class="fas fa-moon"></i>
-        </button>
+        <label class="theme-switch">
+          <input type="checkbox" id="modeToggle" />
+          <span class="slider"></span>
+        </label>
       </div>
     </div>
   </header>
@@ -1346,30 +1396,24 @@ body.dark-mode .footer-links a {
     };
     reader.readAsArrayBuffer(file);
   });
-
-    document.addEventListener('DOMContentLoaded', function () {
+  </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
     const body = document.body;
-    const toggleBtn = document.getElementById('modeToggle');
-    const icon = document.getElementById('modeIcon');
+    const toggle = document.getElementById('modeToggle');
 
     // Load dark mode from localStorage
     if (localStorage.getItem('darkMode') === 'enabled') {
       body.classList.add('dark-mode');
+      toggle.checked = true;
     }
 
-    updateIcon();
-
-    toggleBtn.addEventListener('click', () => {
+    toggle.addEventListener('change', function () {
       body.classList.toggle('dark-mode');
       localStorage.setItem('darkMode', body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
-      updateIcon();
     });
-
-    function updateIcon() {
-      icon.className = body.classList.contains('dark-mode') ? 'fas fa-sun' : 'fas fa-moon';
-    }
   });
-  </script>
+</script>
   <script>
     // Disable range fields if "Generate all" is checked
     document.getElementById("generate_all").addEventListener("change", function () {

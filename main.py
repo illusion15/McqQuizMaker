@@ -247,62 +247,72 @@ def generate_pdf(questions):
     doc = SimpleDocTemplate(pdf_stream, pagesize=letter)
     styles = getSampleStyleSheet()
     elements = []
-    
+
     for data in questions:
-        # Add question number as heading
-        if data["Question Number"]:
-            elements.append(Paragraph(f"<b>{data['Question Number']}</b>", styles["Heading2"]))
-        
-        # Add question text
-        elements.append(Paragraph(data["Question"], styles["Normal"]))
-        
-        # Add images
-        for img in data.get("Images", []):
-            try:
-                # Create reportlab image with proper aspect ratio
-                img_stream = BytesIO(img["bytes"])
-                aspect_ratio = img["height"] / img["width"]
-                img_width = 4 * inch  # Fixed width
-                img_height = img_width * aspect_ratio
-                
-                # Limit height if too tall
-                if img_height > 6 * inch:
-                    img_height = 6 * inch
-                    img_width = img_height / aspect_ratio
-                
-                # Add image to PDF
-                elements.append(ReportLabImage(img_stream, width=img_width, height=img_height))
-                elements.append(Spacer(1, 0.1 * inch))
-            except Exception as e:
-                print(f"Error adding image to PDF: {e}")
-        
-        # Create table for question details
+        styles = getSampleStyleSheet()
+        normal_style = styles['Normal']
+
+        def format_text_with_linebreaks(text):
+            # Add <br/> before list-like patterns
+            patterns = [
+                r"\s([A-Da-d]\.)",
+                r"\s(\d{1,2}\.)",
+                r"\s([ivxlcdm]{1,4}\.)",
+                r"\s([IVXLCDM]{1,4}\.)"
+            ]
+
+            for pattern in patterns:
+                text = re.sub(pattern, r"<br/>&nbsp;\1", text)
+            
+            return text
+
+
+        # Create table data
         table_data = [
+            ["Question", Paragraph(format_text_with_linebreaks(data["Question"]), normal_style)],
             ["Type", data["Type"]],
-            ["Option A", data["Options"][0]],
-            ["Option B", data["Options"][1]],
-            ["Option C", data["Options"][2]],
-            ["Option D", data["Options"][3]],
+            ["Option A", Paragraph(data["Options"][0], normal_style)],
+            ["Option B", Paragraph(data["Options"][1], normal_style)],
+            ["Option C", Paragraph(data["Options"][2], normal_style)],
+            ["Option D", Paragraph(data["Options"][3], normal_style)],
             ["Answer", data["Answer"]],
-            ["Solution", data["Solution"]],
+            ["Solution", Paragraph(format_text_with_linebreaks(data["Solution"]), normal_style)],
             ["Positive Marks", data["Positive Marks"]],
             ["Negative Marks", data["Negative Marks"]]
         ]
-        
+
         # Create PDF table
-        table = Table(table_data, colWidths=[1.5*inch, 5*inch])
+        table = Table(table_data, colWidths=[1.5 * inch, 5 * inch])
         table.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 1, colors.black),
-            ('FONT', (0,0), (-1,-1), 'Helvetica', 10),
-            ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONT', (0, 0), (-1, -1), 'Helvetica', 10),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ]))
-        
+
         elements.append(table)
-        elements.append(Spacer(1, 0.3 * inch))
-    
-    # Build PDF document
+
+        # Add image after table (simulating line break)
+        if data.get("Images"):
+            try:
+                img = data["Images"][0]  # First image only
+                img_stream = BytesIO(img["bytes"])
+                aspect_ratio = img["height"] / img["width"]
+                img_width = 2 * inch
+                img_height = img_width * aspect_ratio
+
+                if img_height > 2 * inch:
+                    img_height = 2 * inch
+                    img_width = img_height / aspect_ratio
+
+                elements.append(Spacer(1, 0.1 * inch))  # newline effect
+                elements.append(ReportLabImage(img_stream, width=img_width, height=img_height))
+            except Exception as e:
+                print(f"Error rendering image after table: {e}")
+
+        elements.append(Spacer(1, 0.3 * inch))  # space before next question
+
+    # Build PDF
     doc.build(elements)
     pdf_stream.seek(0)
     return pdf_stream
