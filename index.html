@@ -46,8 +46,13 @@ body {
   color: var(--text-light);
   line-height: 1.6;
   transition: var(--transition);
-}
 
+  /* Disable text selection for the entire page */
+  -webkit-user-select: none; /* Chrome/Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE10+/Edge */
+  user-select: none;         /* Standard */
+}
 body.dark-mode {
   background-color: var(--bg-dark);
   color: var(--text-dark);
@@ -792,7 +797,16 @@ body.dark-mode .comparison-description {
   margin-left: 1.1rem;
   margin-top: 10px;
 }
-
+.sample-btn-container{
+  display: flex;
+  text-decoration: none;
+}
+.sample-btn{
+  justify-items: center;
+  width: auto;
+  font-size: smaller;
+  padding: 10px;
+}
 .testimonial-section {
   max-width: 1200px;
   margin: 0 auto 4rem;
@@ -1108,13 +1122,19 @@ body.dark-mode .footer-links a {
                 <p>2. Listed options (e.g., A., 1., or i.)</p>
                 <p>3. "correct answer"</p>
                 <p>4. "solution"</p>
+              </div>
             </div>
-        </div>
-
-        <div class="comparison-card">
-            <h3 class="comparison-title">After</h3>
-            <img src="{{ url_for('static', filename='image/after.png') }}" alt="Formatted Quiz Output" class="comparison-image">
-            <p class="comparison-description">Once you upload your PDF, the system will extract your questions and format them into a quiz. You can define correct answers and assign marks — including bonus points for correct answers and penalties for wrong ones.</p>
+            
+            <div class="comparison-card">
+              <h3 class="comparison-title">After</h3>
+              <img src="{{ url_for('static', filename='image/after.png') }}" alt="Formatted Quiz Output" class="comparison-image">
+              <p class="comparison-description">Once you upload your PDF, the system will extract your questions and format them into a quiz. You can define correct answers and assign marks — including bonus points for correct answers and penalties for wrong ones.</p>
+              <p>Download this sample file & test how the upload process works:</p>
+              <a class="sample-btn-container" href="{{ url_for('static', filename='sample.pdf') }}" download>
+                <button class="btn sample-btn">
+                  <i class="fas fa-download"></i> Download Sample File
+                </button>
+              </a>
         </div>
     </div>
 </section>
@@ -1400,5 +1420,19 @@ body.dark-mode .footer-links a {
     });
 
   </script>
+  <script>
+  // Disable right-click context menu
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  // Optional: Prevent Ctrl+C and other key combinations
+  document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'x' || e.key === 'a')) {
+      e.preventDefault();
+    }
+  });
+</script>
+
 </body>
 </html>
