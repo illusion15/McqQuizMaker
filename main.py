@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, send_file, redirect, url_for
-import fitz
+import fitz # PyMuPDF
 from docx import Document
 from docx.shared import Inches
 from docx.oxml import OxmlElement
@@ -29,7 +29,7 @@ uploaded_data = {
 }
 
 # ✅ Universal option pattern (letter, number, roman numeral)
-OPTION_LABEL_RE = re.compile(r"^(\d{1,2}|[A-Da-d]|[ivxlcdmIVXLCDM]{1,4})[\.\)]\s*")
+OPTION_LABEL_RE = re.compile(r"^(\d{1,2}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,4})[\.\)]\s*")
 
 @app.route('/')
 def index():
@@ -40,7 +40,7 @@ def extract_questions_from_pdf(pdf_data):
     questions = []
     current_question = None
     current_images = []
-    question_pattern = re.compile(r"Q\d{3,4}\.")
+    question_pattern = re.compile(r"Q\d{1,9}\.")
     page_question_count = {}
 
     for page_number in range(len(doc)):
@@ -129,7 +129,7 @@ def process_question_block(block, positive, negative):
     
     # Extract question number
     q_num = ""
-    q_num_match = re.match(r"^(Q\d{3,4})\.", block_text.strip())
+    q_num_match = re.match(r"^(Q\d{1,9})\.", block_text.strip())
     if q_num_match:
         q_num = q_num_match.group(1)
 
@@ -165,21 +165,21 @@ def process_question_block(block, positive, negative):
             sol_lines.append(line.strip())
 
         elif capturing_question:
-            line = re.sub(r"^Q\d{3,4}\.\s*", "", line)
+            line = re.sub(r"^Q\d{1,9}\.\s*", "", line)
             question_lines.append(line)
 
     if len(opts) <= 4:
         final_options = opts + ["", "", "", ""][len(opts):]
     else:
         extra_raw_opts = raw_options[:-4]
-        core_opts = opts[-4:][::-1]
+        core_opts = opts[-4:]
         question_lines.extend(extra_raw_opts)
         final_options = core_opts
 
     q = " ".join(question_lines)
 
     if " A." in q and " B." in q:
-        q = re.sub(r'\s([A-Da-d][\.\)])', r'\n\1', q)
+        q = re.sub(r'\s([A-Za-z][\.\)])', r'\n\1', q)
     elif "1." in q and "2." in q:
         q = re.sub(r'\s(\d{1,2}\.)', r'\n\1', q)
 
@@ -255,7 +255,7 @@ def generate_pdf(questions):
         def format_text_with_linebreaks(text):
             # Add <br/> before list-like patterns
             patterns = [
-                r"\s([A-Da-d]\.)",
+                r"\s([A-Za-z]\.)",
                 r"\s(\d{1,2}\.)",
                 r"\s([ivxlcdm]{1,4}\.)",
                 r"\s([IVXLCDM]{1,4}\.)"
@@ -341,7 +341,7 @@ def upload():
     base_numbers = []
     option_issues = []
     repeated_questions = []
-    pattern = r"Q(\d{3,4})\."
+    pattern = r"Q(\d{1,9})\."
     multi_page_warnings = []
 
     # Generate multi-page warnings
@@ -362,7 +362,7 @@ def upload():
         
             # ✅ Count options properly by line, not globally
             lines = block_text.strip().splitlines()
-            option_count = sum(1 for line in lines if re.match(r"^[A-Da-d][\.\)]\s*", line.strip()))
+            option_count = sum(1 for line in lines if re.match(r"^[A-Za-z][\.\)]\s*", line.strip()))
             if option_count != 4:
                 option_issues.append(f"Q{num} has {option_count} options")
 
@@ -422,7 +422,7 @@ def generate():
     if confirm == "no":
         return redirect(url_for("index"))
 
-    pattern = r"Q(\d{3,4})\."
+    pattern = r"Q(\d{1,9})\."
     selected_blocks = []
 
     for block in blocks:

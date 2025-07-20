@@ -115,29 +115,6 @@ body.dark-mode header {
   align-items: center;
   gap: 10px;
 }
-.toggle-container button {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 30px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  font-size: 1.1rem;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
-  background-color: rgba(0, 0, 0, 0.06); /* soft gray for visibility */
-  color: var(--text-light);
-  position: relative;
-  top: 0rem;
-}
-
-body.dark-mode .toggle-container button {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: var(--text-dark);
-}
-.toggle-container button:hover {
-  background-color: rgba(0, 0, 0, 0.12); /* slightly darker on hover */
-}
 
 input:checked + .toggle-slider {
   background-color: var(--accent);
@@ -1006,7 +983,7 @@ body.dark-mode .footer-links a {
   }
 
   .header-content {
-    flex-direction: column;
+    margin-left: 40px;
     gap: 0.8rem;
     text-align: center;
   }
