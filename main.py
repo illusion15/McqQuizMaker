@@ -13,6 +13,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+from reportlab.lib.styles import ParagraphStyle  # Add this import
 import os
 from zipfile import ZipFile
 import io
@@ -28,8 +29,8 @@ uploaded_data = {
     "base": None
 }
 
-# ✅ Universal option pattern (letter, number, roman numeral)
-OPTION_LABEL_RE = re.compile(r"^(\d{1,2}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,4})[\.\)]\s*")
+# ✅ Universal universal option pattern (allows leading whitespace)
+OPTION_LABEL_RE = re.compile(r"^\s*(\d{1,2}|[A-Za-z]|[ivxlcdmIVXLCDM]{1,4})[\.\)]\s*")
 
 @app.route('/')
 def index():
@@ -120,7 +121,8 @@ def force_table_indent_and_widths(table):
 
 def process_question_block(block, positive, negative):
     block_text, images = block
-    lines = [line.strip() for line in block_text.split("\n") if line.strip()]
+    # ✅ Preserve original lines (don't strip immediately)
+    lines = [line for line in block_text.split("\n") if line.strip()]
     opts = []
     raw_options = []
     ans = ''
@@ -197,7 +199,7 @@ def process_question_block(block, positive, negative):
         "Question Number": q_num
     }
 
-def generate_docx(questions):
+def generate_docx(questions, bold_question=False):
     """Generate DOCX document from processed questions"""
     document = Document()
     doc_stream = BytesIO()
@@ -219,14 +221,25 @@ def generate_docx(questions):
             row.cells[0].text = label
 
             if label == "Question":
-                row.cells[1].text = value
-                paragraph = row.cells[1].paragraphs[0]
+                cell = row.cells[1]
+                # Clear existing content
+                for paragraph in cell.paragraphs:
+                    p = paragraph._element
+                    p.getparent().remove(p)
+
+                # Add question text with optional bold formatting
+                p = cell.add_paragraph()
+                if bold_question:
+                    run = p.add_run(value)
+                    run.bold = True
+                else:
+                    p.add_run(value)
 
                 # Insert images associated with this question
                 for img in data.get("Images", []):
                     try:
-                        run = paragraph.add_run()
-                        run.add_break()  # Adding a line break before img
+                        p.add_run().add_break()  # Line break before image
+                        run = p.add_run()
                         run.add_picture(BytesIO(img["bytes"]), width=Inches(2))
                     except Exception as e:
                         print(f"Error adding image to DOCX: {e}")
@@ -234,19 +247,29 @@ def generate_docx(questions):
             else:
                 row.cells[1].text = re.sub(r"\s*\n\s*", " ", value).strip()
 
-        document.add_paragraph("")
+        document.add_paragraph("") #creating a line break between two table
     
     # Save document
     document.save(doc_stream)
     doc_stream.seek(0)
     return doc_stream
 
-def generate_pdf(questions):
+def generate_pdf(questions, bold_question=False):
     """Generate PDF document from processed questions"""
     pdf_stream = BytesIO()
     doc = SimpleDocTemplate(pdf_stream, pagesize=letter)
     styles = getSampleStyleSheet()
     elements = []
+
+
+    if bold_question:
+        bold_style = ParagraphStyle(
+            'BoldQuestion',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=12,
+            textColor=colors.red,
+        )
 
     for data in questions:
         styles = getSampleStyleSheet()
@@ -263,13 +286,12 @@ def generate_pdf(questions):
 
             for pattern in patterns:
                 text = re.sub(pattern, r"<br/>&nbsp;\1", text)
-            
             return text
 
 
         # Create table data
         table_data = [
-            ["Question", Paragraph(format_text_with_linebreaks(data["Question"]), normal_style)],
+            ["Question", Paragraph(format_text_with_linebreaks(data["Question"]), bold_style if bold_question else normal_style)],
             ["Type", data["Type"]],
             ["Option A", Paragraph(data["Options"][0], normal_style)],
             ["Option B", Paragraph(data["Options"][1], normal_style)],
@@ -324,6 +346,12 @@ def upload():
     uploaded_data["positive"] = request.form.get('positive', '2')
     uploaded_data["negative"] = request.form.get('negative', '0.25')
 
+    # Get the bold_question value from the form
+    bold_question = request.form.get('bold_question', 'no') == 'yes'
+    
+    # Store it in uploaded_data
+    uploaded_data["bold_question"] = bold_question
+
     if request.form.get("generate_all") == "yes":
         uploaded_data["range_start"] = 1
         uploaded_data["range_end"] = 9999
@@ -362,7 +390,8 @@ def upload():
         
             # ✅ Count options properly by line, not globally
             lines = block_text.strip().splitlines()
-            option_count = sum(1 for line in lines if re.match(r"^[A-Za-z][\.\)]\s*", line.strip()))
+            # ✅ Remove redundant stripping - lines are already clean
+            option_count = sum(1 for line in lines if OPTION_LABEL_RE.match(line))
             if option_count != 4:
                 option_issues.append(f"Q{num} has {option_count} options")
 
@@ -418,6 +447,7 @@ def generate():
     negative = uploaded_data["negative"]
     range_start = uploaded_data["range_start"]
     range_end = uploaded_data["range_end"]
+    bold_question = uploaded_data["bold_question"]  # Get the bold setting
 
     if confirm == "no":
         return redirect(url_for("index"))
@@ -450,7 +480,7 @@ def generate():
 
     # Handle different output formats
     if output_format == "docx":
-        docx_stream = generate_docx(processed_questions)
+        docx_stream = generate_docx(processed_questions, bold_question)
         return send_file(
             docx_stream,
             as_attachment=True,
@@ -459,7 +489,7 @@ def generate():
         )
 
     elif output_format == "pdf":
-        pdf_stream = generate_pdf(processed_questions)
+        pdf_stream = generate_pdf(processed_questions, bold_question)
         return send_file(
             pdf_stream,
             as_attachment=True,
