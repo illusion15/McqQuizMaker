@@ -152,9 +152,15 @@ def process_question_block(block, positive, negative):
             raw_options[-1] += ' ' + line
 
         elif line.lower().startswith("correct answer"):
-            match = re.search(r"(\d+)", line)
-            if match:
-                ans = match.group(1)
+            # Modified answer processing
+            ans_match = re.search(r"[:=]?\s*([A-Da-d1-4])[\.\)]?\s*$", line, re.IGNORECASE)
+            if ans_match:
+                ans_val = ans_match.group(1).upper()
+                # Convert letter to number if needed
+                if ans_val in 'ABCD':
+                    ans = str(ord(ans_val) - ord('A') + 1)
+                else:
+                    ans = ans_val
             capturing_option_index = -1
             capturing_solution = False
 
