@@ -1,1676 +1,19 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quiz Maker Pro | Transform PDFs into Interactive Quizzes</title>
-  <meta name="description" content="Convert PDF question banks into beautifully formatted quizzes in seconds. Export to DOCX, PDF, or ZIP with customizable scoring." />
+  <meta name="description"
+    content="Convert PDF question banks into beautifully formatted quizzes in seconds. Export to DOCX, PDF, or ZIP with customizable scoring." />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #4361ee;
-      --primary-light: #5f75f1;
-      --primary-dark: #3a56d4;
-      --accent: #06d6a0;
-      --accent-dark: #05b98a;
-      --danger: #ef476f;
-      --warning: #ffd166;
-      --info: #118ab2;
-      --bg-light: #f8f9fa;
-      --bg-card-light: #ffffff;
-      --text-light: #212529;
-      --text-secondary-light: #6c757d;
-      --border-light: #e9ecef;
-      --bg-dark: #121826;
-      --bg-card-dark: #1e293b;
-      --text-dark: #f8f9fa;
-      --text-secondary-dark: #adb5bd;
-      --border-dark: #343a40;
-      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.12);
-      --radius: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 24px;
-      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      --gradient: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    }
+  <link rel="stylesheet" href="static/css/index_style.css">
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      margin: 0;
-      background-color: var(--bg-light);
-      color: var(--text-light);
-      line-height: 1.6;
-      transition: var(--transition);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    body.dark-mode {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    /* Typography */
-    h1, h2, h3, h4, h5, h6 {
-      font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: 1rem;
-    }
-
-    p {
-      margin-bottom: 1rem;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    /* Header */
-    header {
-      display: flex;
-      justify-content: center;
-      padding: 1rem 2rem;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode header {
-      background: rgba(18, 24, 38, 0.95);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      max-width: 1400px;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: var(--primary);
-      transition: var(--transition);
-    }
-
-    body.dark-mode .logo {
-      color: var(--accent);
-    }
-
-    .logo:hover {
-      transform: translateY(-2px);
-      opacity: 0.9;
-    }
-
-    .logo i {
-      font-size: 1.6rem;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 2rem;
-      margin-left: auto;
-      margin-right: 2rem;
-    }
-
-    .nav-links a {
-      font-weight: 500;
-      color: var(--text-light);
-      transition: var(--transition);
-      position: relative;
-    }
-
-    body.dark-mode .nav-links a {
-      color: var(--text-dark);
-    }
-
-    .nav-links a:hover {
-      color: var(--primary);
-    }
-
-    body.dark-mode .nav-links a:hover {
-      color: var(--accent);
-    }
-
-    .nav-links a::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background: var(--primary);
-      transition: var(--transition);
-    }
-
-    body.dark-mode .nav-links a::after {
-      background: var(--accent);
-    }
-
-    .nav-links a:hover::after {
-      width: 100%;
-    }
-
-    .toggle-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    @media (max-width: 768px) {
-    .toggle-container {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-}
-    /* Theme Toggle */
-    .theme-switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 32px;
-    }
-    @media (max-width: 768px) {
-    .theme-switch {
-        width: 40px;
-        height: 25px;
-    }
-    }
-    .theme-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background-color: #e0e0e0;
-      border-radius: 34px;
-      transition: var(--transition);
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 24px;
-      width: 24px;
-      left: 4px;
-      bottom: 4px;
-      background-color: #ff9800;
-      background-image: url("data:image/svg+xml,%3Csvg fill='white' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 4.5a1 1 0 011 1V7a1 1 0 01-2 0V5.5a1 1 0 011-1zm0 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm7.071-9.071a1 1 0 011.414 0l1.414 1.414a1 1 0 01-1.414 1.414L18.071 7.5a1 1 0 010-1.414zm-12.142 0a1 1 0 000 1.414L6.343 8.5a1 1 0 01-1.414-1.414L6.343 5.5a1 1 0 011.414 0zM4.5 12a1 1 0 011-1H7a1 1 0 010 2H5.5a1 1 0 01-1-1zm11.5 7.5a1 1 0 011-1h1.5a1 1 0 010 2H17a1 1 0 01-1-1zm-11-1a1 1 0 011 1v1.5a1 1 0 01-2 0V18.5a1 1 0 011-1zm14.071-2.071a1 1 0 010 1.414l-1.414 1.414a1 1 0 01-1.414-1.414L17.657 16a1 1 0 011.414 0z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: 60%;
-      border-radius: 50%;
-      transition: var(--transition);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    input:checked + .slider {
-      background-color: #2c3e50;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(28px);
-      background-color: #3f51b5;
-      background-image: url("data:image/svg+xml,%3Csvg fill='white' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.75 15.5A9 9 0 0111 3.5a7 7 0 108.25 12z'/%3E%3C/svg%3E");
-    }
-    @media (max-width: 768px) {
-    .theme-switch {
-        width: 40px;
-        height: 18px;
-    }
-    .slider:before {
-      height: 20px;
-      width: 20px;
-      left: -8px;
-      bottom: -2px;
-
-    }
-    }
-
-    /* Hero Section */
-    .hero {
-      background: linear-gradient(135deg, rgba(67, 97, 238, 0.03), rgba(6, 214, 160, 0.03));
-      padding: 6rem 2rem 5rem;
-      text-align: center;
-      margin-bottom: 3rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    body.dark-mode .hero {
-      background: linear-gradient(135deg, rgba(67, 97, 238, 0.08), rgba(6, 214, 160, 0.08));
-    }
-
-    .hero-content {
-      max-width: 900px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero h1 {
-      font-size: 3rem;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-      animation: fadeInDown 1s ease;
-      line-height: 1.2;
-    }
-
-    body.dark-mode .hero h1 {
-      color: var(--accent);
-    }
-
-    .hero p {
-      font-size: 1.25rem;
-      max-width: 700px;
-      margin: 0 auto 2.5rem;
-      color: var(--text-secondary-light);
-      animation: fadeInUp 1s ease 0.2s both;
-    }
-
-    body.dark-mode .hero p {
-      color: var(--text-secondary-dark);
-    }
-
-    .hero-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .cta-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: var(--gradient);
-      color: white;
-      border: none;
-      padding: 1rem 2rem;
-      border-radius: var(--radius);
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-      text-decoration: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cta-button.secondary {
-      background: transparent;
-      color: var(--primary);
-      border: 2px solid var(--primary);
-      box-shadow: none;
-    }
-
-    body.dark-mode .cta-button.secondary {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .cta-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
-    }
-
-    .cta-button.secondary:hover {
-      background: rgba(67, 97, 238, 0.1);
-    }
-
-    body.dark-mode .cta-button.secondary:hover {
-      background: rgba(6, 214, 160, 0.1);
-    }
-
-    .cta-button::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-      opacity: 0;
-      transition: var(--transition);
-    }
-
-    .cta-button:hover::after {
-      opacity: 1;
-    }
-
-    /* Features Section */
-    .features-section {
-      max-width: 1400px;
-      margin: 0 auto 5rem;
-      padding: 0 2rem;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: 2.2rem;
-      margin-bottom: 3rem;
-      color: var(--primary);
-      position: relative;
-      display: inline-block;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    body.dark-mode .section-title {
-      color: var(--accent);
-    }
-
-    .section-title::after {
-      content: "";
-      position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 4px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-    }
-
-    .feature-card {
-      background: var(--bg-card-light);
-      padding: 2.5rem 2rem;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-      text-align: center;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      position: relative;
-      overflow: hidden;
-    }
-
-    body.dark-mode .feature-card {
-      background: var(--bg-card-dark);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .feature-card:hover {
-      transform: translateY(-10px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .feature-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: var(--gradient);
-    }
-
-    .feature-icon {
-      font-size: 2.5rem;
-      color: var(--primary);
-      margin-bottom: 1.5rem;
-      transition: var(--transition);
-    }
-
-    .feature-card:hover .feature-icon {
-      color: var(--accent);
-      transform: scale(1.1);
-    }
-
-    .feature-title {
-      font-size: 1.4rem;
-      margin-bottom: 1rem;
-      color: var(--primary);
-    }
-
-    body.dark-mode .feature-title {
-      color: var(--accent);
-    }
-
-    .feature-desc {
-      color: var(--text-secondary-light);
-      line-height: 1.7;
-    }
-
-    body.dark-mode .feature-desc {
-      color: var(--text-secondary-dark);
-    }
-
-    /* Main Form Container */
-    .container {
-      max-width: 1000px;
-      margin: 0 auto 5rem;
-      background-color: var(--bg-card-light);
-      padding: 3rem;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-      animation: fadeIn 1s ease 0.4s both;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode .container {
-      background-color: var(--bg-card-dark);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .form-title {
-      text-align: center;
-      margin-bottom: 2.5rem;
-      color: var(--primary);
-      font-size: 2rem;
-      position: relative;
-      padding-bottom: 1rem;
-    }
-
-    body.dark-mode .form-title {
-      color: var(--accent);
-    }
-
-    .form-title::after {
-      content: "";
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 4px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 0.75rem;
-      font-weight: 600;
-      color: var(--text-light);
-      font-size: 0.95rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    body.dark-mode .form-group label {
-      color: var(--text-dark);
-    }
-
-    .input-icon {
-      position: relative;
-    }
-
-    .input-icon i {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-secondary-light);
-      pointer-events: none;
-      transition: var(--transition);
-    }
-
-    body.dark-mode .input-icon i {
-      color: var(--text-secondary-dark);
-    }
-
-    input[type="number"],
-    select {
-      width: 100%;
-      padding: 1rem 1rem 1rem 48px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-light);
-      background-color: var(--bg-card-light);
-      font-size: 1rem;
-      transition: var(--transition);
-      font-family: 'Inter', sans-serif;
-    }
-
-    body.dark-mode input,
-    body.dark-mode select {
-      background-color: var(--bg-card-dark);
-      color: var(--text-dark);
-      border-color: var(--border-dark);
-    }
-
-    input[type="number"]:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-    }
-
-    body.dark-mode input[type="number"]:focus,
-    body.dark-mode select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(6, 214, 160, 0.2);
-    }
-
-    /* Drop Area */
-    .drop-area {
-      position: relative;
-      margin-top: 1rem;
-      padding: 3rem 2rem;
-      border: 2px dashed var(--border-light);
-      text-align: center;
-      border-radius: var(--radius);
-      background-color: var(--bg-light);
-      transition: var(--transition);
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    body.dark-mode .drop-area {
-      border-color: var(--border-dark);
-      background-color: rgba(30, 41, 59, 0.5);
-    }
-
-    .drop-area:hover,
-    .drop-area.dragover {
-      border-color: var(--primary);
-      background-color: rgba(67, 97, 238, 0.05);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    body.dark-mode .drop-area:hover,
-    body.dark-mode .drop-area.dragover {
-      border-color: var(--accent);
-      background-color: rgba(6, 214, 160, 0.05);
-    }
-
-    .drop-area i {
-      font-size: 3rem;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-      transition: var(--transition);
-    }
-
-    .drop-area.dragover i {
-      color: var(--accent);
-      transform: scale(1.1);
-    }
-
-    .drop-text {
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--text-light);
-      font-size: 1.1rem;
-    }
-
-    body.dark-mode .drop-text {
-      color: var(--text-dark);
-    }
-
-    .drop-subtext {
-      color: var(--text-secondary-light);
-      font-size: 0.9rem;
-    }
-
-    body.dark-mode .drop-subtext {
-      color: var(--text-secondary-dark);
-    }
-
-    /* File Name Display */
-    #file-name-display {
-      margin-top: 10px;
-      font-weight: 500;
-      text-align: center;
-      color: var(--text-secondary-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    body.dark-mode #file-name-display {
-      color: var(--text-secondary-dark);
-    }
-
-    #file-name-display i {
-      color: var(--accent);
-    }
-
-    /* Checkbox Group */
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 1.5rem 0;
-    }
-
-    .checkbox-group input {
-      width: 20px;
-      height: 20px;
-      accent-color: var(--primary);
-      cursor: pointer;
-    }
-
-    body.dark-mode .checkbox-group input {
-      accent-color: var(--accent);
-    }
-
-    .checkbox-group label {
-      font-weight: 500;
-      color: var(--text-light);
-      cursor: pointer;
-    }
-
-    body.dark-mode .checkbox-group label {
-      color: var(--text-dark);
-    }
-
-    /* Divider */
-    .divider-line {
-      color: var(--text-secondary-light);
-      font-weight: 500;
-      margin: 1.5rem 0;
-      text-align: center;
-      position: relative;
-    }
-
-    .divider-line::before,
-    .divider-line::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: 40%;
-      height: 1px;
-      background: var(--border-light);
-    }
-
-    .divider-line::before {
-      left: 0;
-    }
-
-    .divider-line::after {
-      right: 0;
-    }
-
-    body.dark-mode .divider-line {
-      color: var(--text-secondary-dark);
-    }
-
-    body.dark-mode .divider-line::before,
-    body.dark-mode .divider-line::after {
-      background: var(--border-dark);
-    }
-
-    /* Submit Button */
-    button[type="submit"] {
-      margin-top: 1.5rem;
-      background: var(--gradient);
-      color: white;
-      border: none;
-      padding: 1.2rem;
-      width: 100%;
-      border-radius: var(--radius);
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    button[type="submit"]:hover {
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-      box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
-      transform: translateY(-3px);
-    }
-
-    button[type="submit"]:active {
-      transform: translateY(0);
-    }
-
-    button[type="submit"]::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: 0.5s;
-    }
-
-    button[type="submit"]:hover::after {
-      left: 100%;
-    }
-
-    /* Preview Container */
-    .preview-container {
-      margin-top: 3rem;
-      border-top: 1px solid var(--border-light);
-      padding-top: 2.5rem;
-    }
-
-    body.dark-mode .preview-container {
-      border-top-color: var(--border-dark);
-    }
-
-    .preview-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .preview-title {
-      font-size: 1.3rem;
-      font-weight: 600;
-      color: var(--text-light);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    body.dark-mode .preview-title {
-      color: var(--text-dark);
-    }
-
-    .preview-badge {
-      background: var(--gradient);
-      color: white;
-      padding: 0.4rem 1rem;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    #preview {
-      background-color: var(--bg-light);
-      padding: 1.5rem;
-      border-radius: var(--radius);
-      white-space: pre-wrap;
-      font-size: 0.95rem;
-      min-height: 200px;
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid var(--border-light);
-      transition: var(--transition);
-    }
-
-    body.dark-mode #preview {
-      background-color: rgba(30, 41, 59, 0.5);
-      border-color: var(--border-dark);
-      color: var(--text-dark);
-    }
-
-    .no-preview {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-      color: var(--text-secondary-light);
-    }
-
-    body.dark-mode .no-preview {
-      color: var(--text-secondary-dark);
-    }
-
-    .no-preview i {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      opacity: 0.5;
-    }
-
-    .preview-content {
-      font-family: "Courier New", monospace;
-      line-height: 1.7;
-    }
-
-    .preview-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-    }
-
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(67, 97, 238, 0.2);
-      border-top: 5px solid var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1.5rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Transformation Section */
-    .transformation-section {
-      max-width: 1200px;
-      margin: 0 auto 5rem;
-      padding: 0 2rem;
-      text-align: center;
-    }
-
-    .comparison-container {
-      display: flex;
-      justify-content: space-between;
-      gap: 2rem;
-      margin-top: 2rem;
-      flex-wrap: wrap;
-    }
-
-    .comparison-card {
-      flex: 1;
-      min-width: 300px;
-      background: var(--bg-card-light);
-      padding: 2rem;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode .comparison-card {
-      background: var(--bg-card-dark);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .comparison-card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .comparison-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: var(--gradient);
-    }
-
-    .comparison-title {
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .comparison-image {
-      width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      margin-bottom: 1.5rem;
-      transition: var(--transition);
-      border: 1px solid var(--border-light);
-    }
-
-    body.dark-mode .comparison-image {
-      border-color: var(--border-dark);
-    }
-
-    .comparison-card:hover .comparison-image {
-      transform: scale(1.02);
-    }
-
-    .comparison-description {
-      color: var(--text-secondary-light);
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-    }
-
-    body.dark-mode .comparison-description {
-      color: var(--text-secondary-dark);
-    }
-
-    #imp-instruction {
-      display: flex;
-      flex-direction: column;
-      padding: 10px 20px;
-      text-align: left;
-      background: rgba(67, 97, 238, 0.05);
-      border-radius: var(--radius);
-      margin-bottom: 1.5rem;
-    }
-
-    body.dark-mode #imp-instruction {
-      background: rgba(6, 214, 160, 0.05);
-    }
-
-    #imp-instruction strong {
-      font-weight: 600;
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 0.5rem;
-    }
-
-    body.dark-mode #imp-instruction strong {
-      color: var(--accent);
-    }
-
-    #imp-instruction p {
-      margin-left: 1.1rem;
-      margin-top: 8px;
-      color: var(--text-secondary-light);
-    }
-
-    body.dark-mode #imp-instruction p {
-      color: var(--text-secondary-dark);
-    }
-
-    .sample-btn-container {
-      display: flex;
-      text-decoration: none;
-      justify-content: center;
-    }
-
-    .sample-btn {
-      width: auto;
-      font-size: 1rem;
-      padding: 0.8rem 1.5rem;
-      background: var(--gradient-accent);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-
-    .sample-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
-    }
-
-    /* Testimonials */
-    .testimonial-section {
-      max-width: 1200px;
-      margin: 0 auto 5rem;
-      padding: 0 2rem;
-      text-align: center;
-    }
-
-    .testimonials {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 2rem;
-      align-items: stretch;
-    }
-
-    .testimonial {
-      background: var(--bg-card-light);
-      padding: 2rem;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      text-align: left;
-      position: relative;
-      transition: var(--transition);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100%;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode .testimonial {
-      background: var(--bg-card-dark);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .testimonial:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow-hover);
-    }
-
-    .testimonial::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: var(--gradient);
-    }
-
-    .testimonial-text {
-      font-style: italic;
-      margin-bottom: 1.5rem;
-      color: var(--text-secondary-light);
-      line-height: 1.7;
-      position: relative;
-      padding-left: 1.5rem;
-    }
-
-    .testimonial-text::before {
-      content: '"';
-      position: absolute;
-      left: 0;
-      top: -0.5rem;
-      font-size: 3rem;
-      color: var(--primary);
-      opacity: 0.2;
-      font-family: Georgia, serif;
-    }
-
-    body.dark-mode .testimonial-text {
-      color: var(--text-secondary-dark);
-    }
-
-    .testimonial-author {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .author-avatar {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: var(--gradient);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 1.2rem;
-      flex-shrink: 0;
-    }
-
-    .author-info h4 {
-      color: var(--primary);
-      margin-bottom: 0.2rem;
-    }
-
-    body.dark-mode .author-info h4 {
-      color: var(--accent);
-    }
-
-    .author-role {
-      color: var(--text-secondary-light);
-      font-size: 0.9rem;
-    }
-
-    body.dark-mode .author-role {
-      color: var(--text-secondary-dark);
-    }
-
-    /* FAQ Section */
-    .faq-section {
-      max-width: 800px;
-      margin: 0 auto 5rem;
-      padding: 0 2rem;
-    }
-
-    .faq-item {
-      margin-bottom: 1.5rem;
-      background: var(--bg-card-light);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      transition: var(--transition);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode .faq-item {
-      background: var(--bg-card-dark);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .faq-question {
-      padding: 1.5rem;
-      font-weight: 600;
-      color: var(--primary);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: var(--transition);
-    }
-
-    body.dark-mode .faq-question {
-      color: var(--accent);
-    }
-
-    .faq-question:hover {
-      background: rgba(67, 97, 238, 0.05);
-    }
-
-    body.dark-mode .faq-question:hover {
-      background: rgba(6, 214, 160, 0.05);
-    }
-
-    .faq-question i {
-      transition: var(--transition);
-    }
-
-    .faq-answer {
-      padding: 0 1.5rem;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-      color: var(--text-secondary-light);
-    }
-
-    body.dark-mode .faq-answer {
-      color: var(--text-secondary-dark);
-    }
-
-    .faq-item.active .faq-question i {
-      transform: rotate(180deg);
-    }
-
-    .faq-item.active .faq-answer {
-      max-height: 500px;
-      padding-bottom: 1.5rem;
-    }
-
-    /* Footer */
-    footer {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      padding: 3rem 2rem;
-      text-align: center;
-      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    body.dark-mode footer {
-      background: rgba(18, 24, 38, 0.95);
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .footer-content {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .footer-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: var(--primary);
-      margin-bottom: 1.5rem;
-    }
-
-    body.dark-mode .footer-logo {
-      color: var(--accent);
-    }
-
-    .footer-logo i {
-      font-size: 1.6rem;
-    }
-
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin: 2rem 0;
-      flex-wrap: wrap;
-    }
-
-    .footer-links a {
-      color: var(--text-light);
-      text-decoration: none;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-
-    body.dark-mode .footer-links a {
-      color: var(--text-dark);
-    }
-
-    .footer-links a:hover {
-      color: var(--primary);
-    }
-
-    body.dark-mode .footer-links a:hover {
-      color: var(--accent);
-    }
-
-    .social-links {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      margin: 2rem 0;
-    }
-
-    .social-links a {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--bg-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-light);
-      transition: var(--transition);
-    }
-
-    body.dark-mode .social-links a {
-      background: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    .social-links a:hover {
-      background: var(--primary);
-      color: white;
-      transform: translateY(-3px);
-    }
-
-    body.dark-mode .social-links a:hover {
-      background: var(--accent);
-    }
-
-    .copyright {
-      margin-top: 2rem;
-      color: var(--text-secondary-light);
-      font-size: 0.9rem;
-    }
-
-    body.dark-mode .copyright {
-      color: var(--text-secondary-dark);
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0px); }
-    }
-
-    /* Responsive Styles */
-    @media (max-width: 1024px) {
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-      
-      .container {
-        padding: 2.5rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .header-content {
-        flex-wrap: wrap;
-        gap: 0.2rem;
-      }
-      
-      .nav-links {
-        margin: 1rem 0;
-      }
-      
-      .hero {
-        padding: 4rem 1.5rem;
-      }
-      
-      .hero h1 {
-        font-size: 2rem;
-      }
-      
-      .hero p {
-        font-size: 1.1rem;
-      }
-      
-      .hero-buttons {
-        flex-direction: column;
-        gap: 1rem;
-      }
-      
-      .container {
-        margin: 2rem 1.5rem;
-        padding: 2rem;
-      }
-      
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .comparison-container {
-        flex-direction: column;
-      }
-      
-      .testimonials {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero {
-        padding: 3rem 1rem;
-      }
-      
-      .hero h1 {
-        font-size: 1.8rem;
-      }
-      
-      .container {
-        padding: 1.5rem;
-      }
-      
-      .form-title {
-        font-size: 1.5rem;
-      }
-      
-      .drop-area {
-        padding: 2rem 1.5rem;
-      }
-      
-      button[type="submit"] {
-        padding: 1rem;
-        font-size: 1rem;
-      }
-      
-      .footer-links {
-        flex-direction: column;
-        gap: 1rem;
-      }
-    }
-
-    /* Tooltip */
-    .tooltip {
-      position: relative;
-      display: inline-block;
-      margin-left: 8px;
-    }
-
-    .tooltip i {
-      color: var(--text-secondary-light);
-      font-size: 0.9rem;
-    }
-
-    body.dark-mode .tooltip i {
-      color: var(--text-secondary-dark);
-    }
-
-    .tooltip .tooltip-text {
-      visibility: hidden;
-      width: 200px;
-      background-color: var(--bg-card-dark);
-      color: var(--text-dark);
-      text-align: center;
-      border-radius: var(--radius);
-      padding: 0.5rem;
-      position: absolute;
-      z-index: 1;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      font-size: 0.85rem;
-      font-weight: normal;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    /* Progress Bar */
-    .progress-container {
-      width: 100%;
-      height: 6px;
-      background: var(--bg-light);
-      border-radius: 3px;
-      margin-top: 1rem;
-      overflow: hidden;
-    }
-
-    body.dark-mode .progress-container {
-      background: var(--bg-dark);
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: var(--gradient);
-      width: 0;
-      transition: width 0.3s ease;
-    }
-
-    /* Responsive Navigation */
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: var(--primary);
-      cursor: pointer;
-      margin-left: auto;
-      z-index: 1001;
-    }
-
-    body.dark-mode .menu-toggle {
-      color: var(--accent);
-    }
-
-    @media (max-width: 768px) {
-      .nav-container {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        width: 100%;
-        position: relative;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .nav-links {
-        display: none;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 100%;
-        margin: 0;
-        padding: 1rem 0;
-        gap: 1rem;
-        background: rgba(255, 255, 255, 0.98);
-        border-radius: var(--radius);
-        position: absolute;
-        top: 100%;
-        left: 0;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      body.dark-mode .nav-links {
-        background: rgba(18, 24, 38, 0.98);
-      }
-
-      .nav-links.active {
-        display: flex;
-        animation: slideDown 0.3s ease-out;
-      }
-
-      .nav-links a {
-        padding: 0.75rem 1.5rem;
-        width: 100%;
-      }
-
-      .header-content {
-        flex-wrap: wrap;
-      }
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Mobile adjustments */
-    @media (max-width: 480px) {
-      header {
-        padding: 0.8rem 1rem;
-      }
-      
-      .logo span {
-        font-size: 1.2rem;
-      }
-      
-      .hero {
-        padding: 2.5rem 1rem;
-      }
-      
-      .hero-buttons .cta-button {
-        padding: 0.8rem 1.5rem;
-        font-size: 1rem;
-      }
-      
-      .features-section {
-        padding: 0 1rem;
-        margin-bottom: 3rem;
-      }
-      
-      .feature-card {
-        padding: 1.5rem;
-      }
-      
-      .transformation-section {
-        padding: 0 1rem;
-        margin-bottom: 3rem;
-      }
-      
-      .comparison-card {
-        padding: 1.5rem;
-      }
-      
-      .testimonial-section {
-        padding: 0 1rem;
-        margin-bottom: 3rem;
-      }
-      
-      .testimonial {
-        padding: 1.5rem;
-      }
-      
-      .faq-section {
-        padding: 0 1rem;
-        margin-bottom: 3rem;
-      }
-      
-      footer {
-        padding: 2rem 1rem;
-      }
-      
-      .footer-links {
-        gap: 1.5rem;
-      }
-    }
-  </style>
 </head>
+
 <body>
   <div id="top"></div>
   <header>
@@ -1679,7 +22,7 @@
         <i class="fas fa-file-alt"></i>
         <span>Quiz Maker Pro</span>
       </a>
-      
+
       <nav class="nav-container">
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
           <i class="fas fa-bars"></i>
@@ -1691,7 +34,7 @@
           <a href="#faq">FAQ</a>
         </div>
       </nav>
-      
+
       <div class="toggle-container">
         <label class="theme-switch">
           <input type="checkbox" id="modeToggle" />
@@ -1704,8 +47,9 @@
   <section class="hero">
     <div class="hero-content">
       <h1>Transform PDFs into Beautifully Formatted Quizzes</h1>
-      <p>Save hours of manual work by automatically converting your question banks into ready-to-use quiz formats with customizable scoring and layouts.</p>
-      
+      <p>Save hours of manual work by automatically converting your question banks into ready-to-use quiz formats with
+        customizable scoring and layouts.</p>
+
       <div class="hero-buttons">
         <a href="#uploadForm" class="cta-button">
           <i class="fas fa-rocket"></i> Start Converting Now
@@ -1725,23 +69,26 @@
           <i class="fas fa-bolt"></i>
         </div>
         <h3 class="feature-title">Instant Conversion</h3>
-        <p class="feature-desc">Upload your PDF and get quiz-ready documents in seconds. No more tedious manual formatting or copy-pasting.</p>
+        <p class="feature-desc">Upload your PDF and get quiz-ready documents in seconds. No more tedious manual
+          formatting or copy-pasting.</p>
       </div>
-      
+
       <div class="feature-card">
         <div class="feature-icon">
           <i class="fas fa-sliders-h"></i>
         </div>
         <h3 class="feature-title">Smart Customization</h3>
-        <p class="feature-desc">Set scoring parameters, select question ranges, and choose from multiple output formats including DOCX, PDF, and ZIP.</p>
+        <p class="feature-desc">Set scoring parameters, select question ranges, and choose from multiple output formats
+          including DOCX, PDF, and ZIP.</p>
       </div>
-      
+
       <div class="feature-card">
         <div class="feature-icon">
           <i class="fas fa-chart-bar"></i>
         </div>
         <h3 class="feature-title">Detailed Analytics</h3>
-        <p class="feature-desc">Get a comprehensive preview of your quiz with question count, formatting issues, and content analysis before export.</p>
+        <p class="feature-desc">Get a comprehensive preview of your quiz with question count, formatting issues, and
+          content analysis before export.</p>
       </div>
     </div>
   </section>
@@ -1752,20 +99,22 @@
       <div class="comparison-card">
         <h3 class="comparison-title">Your Input</h3>
         <img src="/static/image/before.png" alt="Original PDF Content" class="comparison-image">
-        <p class="comparison-description">Upload your PDF with questions and options in the standard format. Our system automatically detects the structure.</p>
+        <p class="comparison-description">Upload your PDF with questions and options in the standard format. Our system
+          automatically detects the structure.</p>
         <div id="imp-instruction">
-          <strong><i class="fas fa-info-circle"></i> Format Requirements:</strong> 
+          <strong><i class="fas fa-info-circle"></i> Format Requirements:</strong>
           <p>1. Questions must start with "Q" followed by a number</p>
           <p>2. Options should be labeled (A., B., C., etc.)</p>
           <p>3. Clearly mark the correct answer</p>
           <p>4. Include solution explanations if available</p>
         </div>
       </div>
-      
+
       <div class="comparison-card">
         <h3 class="comparison-title">Our Output</h3>
         <img src="/static/image/after.png" alt="Formatted Quiz Output" class="comparison-image">
-        <p class="comparison-description">We transform your content into a professionally formatted quiz with customizable scoring, answer keys, and solution guides.</p>
+        <p class="comparison-description">We transform your content into a professionally formatted quiz with
+          customizable scoring, answer keys, and solution guides.</p>
         <p>Try it yourself with our sample file:</p>
         <a class="sample-btn-container" href="#" download>
           <button class="sample-btn">
@@ -1778,7 +127,7 @@
 
   <div class="container" id="uploadForm">
     <h1 class="form-title">Create Your Quiz</h1>
-    
+
     <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
       <div class="form-group">
         <label for="pdf_file">
@@ -1867,7 +216,7 @@
         <input type="checkbox" id="generate_all" name="generate_all" value="yes" checked />
         <label for="generate_all">Process all questions in the document</label>
       </div>
-      
+
       <div class="divider-line">OR Select Specific Questions</div>
 
       <div class="form-grid">
@@ -1925,7 +274,8 @@
     <h2 class="section-title">What Educators Say</h2>
     <div class="testimonials">
       <div class="testimonial">
-        <p class="testimonial-text">This tool has revolutionized how I prepare quizzes. What used to take hours now takes minutes! The formatted output is perfect for uploading to our LMS.</p>
+        <p class="testimonial-text">This tool has revolutionized how I prepare quizzes. What used to take hours now
+          takes minutes! The formatted output is perfect for uploading to our LMS.</p>
         <div class="testimonial-author">
           <div class="author-avatar">P</div>
           <div class="author-info">
@@ -1934,9 +284,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="testimonial">
-        <p class="testimonial-text">The diagnostic report caught formatting issues I would've missed. It's like having an assistant who checks all my question banks before I use them.</p>
+        <p class="testimonial-text">The diagnostic report caught formatting issues I would've missed. It's like having
+          an assistant who checks all my question banks before I use them.</p>
         <div class="testimonial-author">
           <div class="author-avatar">SS</div>
           <div class="author-info">
@@ -1945,9 +296,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="testimonial">
-        <p class="testimonial-text">My students love the clean format of the quizzes. The automatic scoring system saves me so much time during grading season.</p>
+        <p class="testimonial-text">My students love the clean format of the quizzes. The automatic scoring system saves
+          me so much time during grading season.</p>
         <div class="testimonial-author">
           <div class="author-avatar">M</div>
           <div class="author-info">
@@ -1961,54 +313,59 @@
 
   <section class="faq-section" id="faq">
     <h2 class="section-title">Frequently Asked Questions</h2>
-    
+
     <div class="faq-item">
       <div class="faq-question">
         What PDF formats are supported?
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        We support most standard PDFs with text content. Scanned PDFs or image-based PDFs may not work unless they've been processed with OCR (Optical Character Recognition) software first.
+        We support most standard PDFs with text content. Scanned PDFs or image-based PDFs may not work unless they've
+        been processed with OCR (Optical Character Recognition) software first.
       </div>
     </div>
-    
+
     <div class="faq-item">
       <div class="faq-question">
         Is there a file size limit?
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        Yes, the current maximum file size is 10MB. For larger files, consider splitting them into smaller parts or compressing the PDF before uploading.
+        Yes, the current maximum file size is 10MB. For larger files, consider splitting them into smaller parts or
+        compressing the PDF before uploading.
       </div>
     </div>
-    
+
     <div class="faq-item">
       <div class="faq-question">
         How are the questions detected?
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        Our system looks for question numbers (Q1, Q2, etc.), followed by question text, then options (A, B, C, etc.), and finally the correct answer indicator. The more standardized your format, the better the detection.
+        Our system looks for question numbers (Q1, Q2, etc.), followed by question text, then options (A, B, C, etc.),
+        and finally the correct answer indicator. The more standardized your format, the better the detection.
       </div>
     </div>
-    
+
     <div class="faq-item">
       <div class="faq-question">
         Can I edit the output after generation?
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        Absolutely! The DOCX output is fully editable in Microsoft Word or similar software. The PDF output can be edited with PDF editing tools.
+        Absolutely! The DOCX output is fully editable in Microsoft Word or similar software. The PDF output can be
+        edited with PDF editing tools.
       </div>
     </div>
-    
+
     <div class="faq-item">
       <div class="faq-question">
         Is my data secure?
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        Yes, we take privacy seriously. Your files are processed securely and are automatically deleted from our servers after conversion. We don't store your content long-term.
+        Yes, we take privacy seriously. Your files are processed securely and are automatically deleted from our servers
+        after conversion. We don't store your content long-term.
       </div>
     </div>
   </section>
@@ -2019,7 +376,7 @@
         <i class="fas fa-file-alt"></i>
         <span>Quiz Maker Pro</span>
       </div>
-      
+
       <div class="footer-links">
         <a href="#features"><i class="fas fa-star"></i> Features</a>
         <a href="#how-it-works"><i class="fas fa-play-circle"></i> How It Works</a>
@@ -2028,14 +385,14 @@
         <a href="#"><i class="fas fa-envelope"></i> Contact</a>
         <a href="#"><i class="fas fa-shield-alt"></i> Privacy</a>
       </div>
-      
+
       <div class="social-links">
         <a href="#"><i class="fab fa-twitter"></i></a>
         <a href="#"><i class="fab fa-facebook-f"></i></a>
         <a href="#"><i class="fab fa-linkedin-in"></i></a>
         <a href="#"><i class="fab fa-github"></i></a>
       </div>
-      
+
       <div class="copyright">
         &copy; 2025 Quiz Maker Pro. All rights reserved.
       </div>
@@ -2100,7 +457,7 @@
         progress += Math.random() * 10;
         if (progress > 100) progress = 100;
         progressBar.style.width = `${progress}%`;
-        
+
         if (progress === 100) {
           clearInterval(progressInterval);
           setTimeout(() => {
@@ -2202,7 +559,7 @@
       question.addEventListener('click', () => {
         const item = question.parentElement;
         item.classList.toggle('active');
-        
+
         // Close other open items
         document.querySelectorAll('.faq-item').forEach(otherItem => {
           if (otherItem !== item && otherItem.classList.contains('active')) {
@@ -2216,17 +573,17 @@
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        
+
         const targetId = this.getAttribute('href');
         if (targetId === '#') return;
-        
+
         const targetElement = document.querySelector(targetId);
         if (targetElement) {
           window.scrollTo({
             top: targetElement.offsetTop - 80,
             behavior: 'smooth'
           });
-          
+
           // Close mobile menu if open
           const navLinks = document.getElementById('navLinks');
           if (navLinks.classList.contains('active')) {
@@ -2239,20 +596,20 @@
     });
 
     // Form submission handler
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
       const file = document.getElementById('pdf_file').files[0];
       if (!file) {
         e.preventDefault();
         alert('Please upload a PDF file first');
         return;
       }
-      
+
       // Show loading state
       const submitButton = this.querySelector('button[type="submit"]');
       const originalText = submitButton.innerHTML;
       submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
       submitButton.disabled = true;
-      
+
       // Revert after 5 seconds if something goes wrong
       setTimeout(() => {
         submitButton.innerHTML = originalText;
@@ -2261,10 +618,10 @@
     });
 
     // Responsive Menu Toggle
-    document.getElementById('menuToggle').addEventListener('click', function() {
+    document.getElementById('menuToggle').addEventListener('click', function () {
       const navLinks = document.getElementById('navLinks');
       navLinks.classList.toggle('active');
-      
+
       // Toggle icon
       const icon = this.querySelector('i');
       if (navLinks.classList.contains('active')) {
@@ -2277,12 +634,12 @@
     });
 
     // Close menu when clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       const navContainer = document.querySelector('.nav-container');
       const menuToggle = document.getElementById('menuToggle');
       const navLinks = document.getElementById('navLinks');
-      
-      if (!navContainer.contains(e.target) ){
+
+      if (!navContainer.contains(e.target)) {
         navLinks.classList.remove('active');
         menuToggle.querySelector('i').classList.remove('fa-times');
         menuToggle.querySelector('i').classList.add('fa-bars');
@@ -2290,4 +647,5 @@
     });
   </script>
 </body>
+
 </html>
