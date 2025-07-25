@@ -84,13 +84,17 @@ body.dark-mode header {
 .logo {
   display: flex;
   align-items: center;
+  color: var(--primary);
   gap: 12px;
   font-weight: 600;
   font-size: 1.1rem;
 }
+body.dark-mode .logo {
+  color: var(--primary);
+}
 
-.logo i {
-  font-size: 1.4rem;
+.logo img {
+  height: 3rem;
   animation: pulse 2s infinite;
 }
 

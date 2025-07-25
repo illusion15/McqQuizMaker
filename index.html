@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quiz Maker Pro | Transform PDFs into Interactive Quizzes</title>
+  <title>PARMAR'S BULK UPLOADER</title>
   <meta name="description"
     content="Convert PDF question banks into beautifully formatted quizzes in seconds. Export to DOCX, PDF, or ZIP with customizable scoring." />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -19,8 +19,8 @@
   <header>
     <div class="header-content">
       <a href="#top" class="logo">
-        <i class="fas fa-file-alt"></i>
-        <span>Quiz Maker Pro</span>
+        <img src="static/image/parmar ssc logo.png" alt="Parmar SSC">
+        <span>Parmar's Bulk Uploader</span>
       </a>
 
       <nav class="nav-container">
@@ -54,13 +54,13 @@
         <a href="#uploadForm" class="cta-button">
           <i class="fas fa-rocket"></i> Start Converting Now
         </a>
-        <a href="#how-it-works" class="cta-button secondary">
+        <!-- <a href="#how-it-works" class="cta-button secondary">
           <i class="fas fa-play-circle"></i> See How It Works
-        </a>
+        </a> -->
       </div>
     </div>
   </section>
-
+<!--
   <section class="features-section" id="features">
     <h2 class="section-title">Why Choose Quiz Maker Pro</h2>
     <div class="features">
@@ -124,23 +124,23 @@
       </div>
     </div>
   </section>
-
+-->
   <div class="container" id="uploadForm">
     <h1 class="form-title">Create Your Quiz</h1>
 
     <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
       <div class="form-group">
         <label for="pdf_file">
-          <i class="fas fa-file-pdf"></i> Upload Your PDF File
+          <i class="fas fa-file-pdf"></i> Upload Your File
           <div class="tooltip">
             <i class="fas fa-question-circle"></i>
-            <span class="tooltip-text">Supports most PDF question banks. Max file size: 10MB.</span>
+            <span class="tooltip-text">Supports most PDF question banks. Max file size: 15MB.</span>
           </div>
         </label>
         <div class="drop-area" id="drop-area">
           <i class="fas fa-cloud-upload-alt"></i>
-          <div class="drop-text">Drag & drop your PDF here</div>
-          <div class="drop-subtext">or click to browse files (Max 10MB)</div>
+          <div class="drop-text">Drag & drop your file here</div>
+          <div class="drop-subtext">or click to browse files (Max 15MB)</div>
           <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" hidden required />
         </div>
         <div id="file-name-display">
@@ -155,7 +155,7 @@
       <div class="form-grid">
         <div class="form-group">
           <label for="positive">
-            <i class="fas fa-plus-circle"></i> Points for Correct Answer
+            <i class="fas fa-plus-circle"></i> Positive Marks
             <div class="tooltip">
               <i class="fas fa-question-circle"></i>
               <span class="tooltip-text">Points awarded for each correct answer</span>
@@ -169,7 +169,7 @@
 
         <div class="form-group">
           <label for="negative">
-            <i class="fas fa-minus-circle"></i> Penalty for Wrong Answer
+            <i class="fas fa-minus-circle"></i>Negative Marks
             <div class="tooltip">
               <i class="fas fa-question-circle"></i>
               <span class="tooltip-text">Points deducted for incorrect answers (set to 0 for no penalty)</span>
@@ -193,18 +193,18 @@
         <div class="input-icon">
           <i class="fas fa-file-export"></i>
           <select id="format" name="format">
-            <option value="docx">DOCX (Microsoft Word)</option>
-            <option value="pdf">PDF (Portable Document Format)</option>
-            <option value="zip">ZIP (Compressed Archive)</option>
+            <option value="docx">doc (Microsoft Word)</option>
+            <option value="pdf">pdf (Portable Document Format)</option>
+            <option value="zip">zip (Compressed Archive)</option>
           </select>
         </div>
       </div>
 
       <div class="form-group">
-        <label><i class="fas fa-text-height"></i> Text Formatting Options</label>
+        <!-- <label><i class="fas fa-text-height"></i> Text Formatting Options</label> -->
         <div class="checkbox-group">
           <input type="checkbox" id="bold_question" name="bold_question" value="yes" checked />
-          <label for="bold_question">Bold question text</label>
+          <label for="bold_question">Want Questions Bold?</label>
         </div>
         <!-- <div class="checkbox-group">
           <input type="checkbox" id="highlight_answer" name="highlight_answer" value="yes" checked />
@@ -214,15 +214,15 @@
 
       <div class="checkbox-group">
         <input type="checkbox" id="generate_all" name="generate_all" value="yes" checked />
-        <label for="generate_all">Process all questions in the document</label>
+        <label for="generate_all">Process whole doc at once</label>
       </div>
 
-      <div class="divider-line">OR Select Specific Questions</div>
+      <div class="divider-line">Process a specific range</div>
 
       <div class="form-grid">
         <div class="form-group">
           <label for="range_start">
-            <i class="fas fa-play"></i> Starting Question Number
+            <i class="fas fa-play"></i> Start Question
             <div class="tooltip">
               <i class="fas fa-question-circle"></i>
               <span class="tooltip-text">Leave blank to start from first question</span>
@@ -236,7 +236,7 @@
 
         <div class="form-group">
           <label for="range_end">
-            <i class="fas fa-stop"></i> Ending Question Number
+            <i class="fas fa-stop"></i> End Question
             <div class="tooltip">
               <i class="fas fa-question-circle"></i>
               <span class="tooltip-text">Leave blank to process until last question</span>
@@ -331,7 +331,7 @@
         <i class="fas fa-chevron-down"></i>
       </div>
       <div class="faq-answer">
-        Yes, the current maximum file size is 10MB. For larger files, consider splitting them into smaller parts or
+        Yes, the current maximum file size is 15MB. For larger files, consider splitting them into smaller parts or
         compressing the PDF before uploading.
       </div>
     </div>
@@ -373,7 +373,7 @@
   <footer>
     <div class="footer-content">
       <div class="footer-logo">
-        <i class="fas fa-file-alt"></i>
+        <img src="static/image/parmar ssc logo.png" alt="Parmar SSC">
         <span>Quiz Maker Pro</span>
       </div>
 

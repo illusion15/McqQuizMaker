@@ -1,8 +1,8 @@
 :root {
-  --primary: #4361ee;
-  --primary-light: #5f75f1;
-  --primary-dark: #3a56d4;
-  --accent: #06d6a0;
+  --primary: #E81F62;
+  --primary-light: #db5280;
+  --primary-dark: #451827;
+  --accent: #fa578e;
   --accent-dark: #05b98a;
   --danger: #ef476f;
   --warning: #ffd166;
@@ -112,6 +112,7 @@ body.dark-mode header {
   transition: var(--transition);
 }
 
+
 body.dark-mode .logo {
   color: var(--accent);
 }
@@ -121,8 +122,8 @@ body.dark-mode .logo {
   opacity: 0.9;
 }
 
-.logo i {
-  font-size: 1.6rem;
+.logo img {
+  height: 3rem;
   animation: pulse 2s infinite;
 }
 
@@ -1288,8 +1289,8 @@ body.dark-mode .footer-logo {
   color: var(--accent);
 }
 
-.footer-logo i {
-  font-size: 1.6rem;
+.footer-logo img {
+  height: 7rem;
 }
 
 .footer-links {
