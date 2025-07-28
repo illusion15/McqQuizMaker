@@ -143,7 +143,7 @@
           <i class="fas fa-cloud-upload-alt"></i>
           <div class="drop-text">Drag & Drop Your File Here</div>
           <div class="drop-subtext">Or Click To Browse Files (Max 15MB)</div>
-          <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf" hidden required />
+          <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf/docx" hidden required />
         </div>
         <div id="file-name-display">
           <i class="fas fa-check-circle"></i>
@@ -402,73 +402,85 @@
   </footer>
 
   <script>
-    // File Upload Handling
-    const dropArea = document.getElementById('drop-area');
-    const fileInput = document.getElementById('pdf_file');
-    const preview = document.getElementById('preview');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    const progressContainer = document.getElementById('progress-container');
-    const progressBar = document.getElementById('progress-bar');
-
-    dropArea.addEventListener('click', () => fileInput.click());
-
-    dropArea.addEventListener('dragover', e => {
-      e.preventDefault();
-      dropArea.classList.add('dragover');
+  // Helper function to load external scripts
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
     });
+  }
 
-    dropArea.addEventListener('dragleave', () => {
-      dropArea.classList.remove('dragover');
-    });
+  // File Upload Handling
+  const dropArea = document.getElementById('drop-area');
+  const fileInput = document.getElementById('pdf_file');
+  const preview = document.getElementById('preview');
+  const fileNameDisplay = document.getElementById('file-name-display');
+  const progressContainer = document.getElementById('progress-container');
+  const progressBar = document.getElementById('progress-bar');
 
-    dropArea.addEventListener('drop', e => {
-      e.preventDefault();
-      dropArea.classList.remove('dragover');
-      fileInput.files = e.dataTransfer.files;
-      fileInput.dispatchEvent(new Event('change'));
-    });
+  dropArea.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file || !file.name.endsWith('.pdf')) {
-        preview.innerHTML = `
-          <div class="no-preview">
-            <i class="fas fa-exclamation-circle"></i>
-            <div>Please upload a valid PDF file</div>
-          </div>
-        `;
-        fileNameDisplay.innerHTML = '<i class="fas fa-times-circle"></i> Invalid file type';
-        return;
-      }
+  dropArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropArea.classList.add('dragover');
+  });
 
-      // Display uploaded file name
-      fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> ${file.name}`;
+  dropArea.addEventListener('dragleave', () => {
+    dropArea.classList.remove('dragover');
+  });
 
-      // Show loading state
+  dropArea.addEventListener('drop', e => {
+    e.preventDefault();
+    dropArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  });
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+
+    if (!file || (!file.name.endsWith('.pdf') && !file.name.endsWith('.docx'))) {
       preview.innerHTML = `
-        <div class="preview-loading">
-          <div class="spinner"></div>
-          <div>Loading PDF preview...</div>
+        <div class="no-preview">
+          <i class="fas fa-exclamation-circle"></i>
+          <div>Please upload a valid <strong>.pdf</strong> or <strong>.docx</strong> file</div>
         </div>
       `;
+      fileNameDisplay.innerHTML = '<i class="fas fa-times-circle"></i> Invalid file type';
+      return;
+    }
 
-      // Simulate upload progress
-      progressContainer.style.display = 'block';
-      let progress = 0;
-      const progressInterval = setInterval(() => {
-        progress += Math.random() * 10;
-        if (progress > 100) progress = 100;
-        progressBar.style.width = `${progress}%`;
+    // ✅ Show uploaded file name
+    fileNameDisplay.innerHTML = `<i class="fas fa-check-circle"></i> ${file.name}`;
 
-        if (progress === 100) {
-          clearInterval(progressInterval);
-          setTimeout(() => {
-            progressContainer.style.display = 'none';
-          }, 500);
-        }
-      }, 100);
+    // ✅ Show processing state
+    preview.innerHTML = `
+      <div class="preview-loading">
+        <div class="spinner"></div>
+        <div>Processing file...</div>
+      </div>
+    `;
 
-      // Process PDF preview
+    progressContainer.style.display = 'block';
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += Math.random() * 10;
+      if (progress > 100) progress = 100;
+      progressBar.style.width = `${progress}%`;
+
+      if (progress === 100) {
+        clearInterval(progressInterval);
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+        }, 500);
+      }
+    }, 100);
+
+    // ✅ Handle PDF file preview
+    if (file.name.endsWith('.pdf')) {
       const reader = new FileReader();
       reader.onload = function (e) {
         const typedArray = new Uint8Array(e.target.result);
@@ -526,11 +538,82 @@
               <div>Could not load PDF. Please try another file.</div>
             </div>
           `;
-          fileNameDisplay.innerHTML = '<i class="fas fa-times-circle"></i> Error loading file';
+          fileNameDisplay.innerHTML = '<i class="fas fa-times-circle"></i> Error loading PDF';
         });
       };
       reader.readAsArrayBuffer(file);
-    });
+
+    } 
+    // ✅ Handle DOCX file preview
+    else if (file.name.endsWith('.docx')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arrayBuffer = e.target.result;
+        
+        // Function to handle DOCX conversion
+        const processDocx = () => {
+          if (typeof mammoth !== "undefined" && mammoth.extractRawText) {
+            mammoth.extractRawText({ arrayBuffer })
+              .then(result => {
+                const text = result.value;
+                preview.innerHTML = `
+                  <div class="docx-preview">
+                    <i class="fas fa-file-word"></i>
+                    <div class="preview-content">
+                      <pre>${text.slice(0, 1000)}${text.length > 1000 ? '...' : ''}</pre>
+                    </div>
+                    <div class="docx-info">DOCX content preview</div>
+                  </div>
+                `;
+              })
+              .catch(error => {
+                console.error('DOCX conversion error:', error);
+                preview.innerHTML = `
+                  <div class="no-preview">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>Could not generate DOCX preview</div>
+                  </div>
+                `;
+              });
+          } else {
+            preview.innerHTML = `
+              <div class="no-preview">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>Preview library failed to load</div>
+              </div>
+            `;
+          }
+        };
+
+        // Load Mammoth if needed
+        if (typeof mammoth === "undefined") {
+          preview.innerHTML = `
+            <div class="preview-loading">
+              <div class="spinner"></div>
+              <div>Loading preview library...</div>
+            </div>
+          `;
+          
+          loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js')
+            .then(processDocx)
+            .catch(error => {
+              console.error('Failed to load Mammoth:', error);
+              preview.innerHTML = `
+                <div class="no-preview">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <div>Could not load preview library</div>
+                </div>
+              `;
+            });
+        } else {
+          processDocx();
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  });
+</script>
+<script>
 
     // Dark Mode Toggle
     document.addEventListener('DOMContentLoaded', function () {
