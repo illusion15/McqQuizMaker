@@ -936,10 +936,20 @@ def upload():
         
             # ✅ Count options properly by line, not globally
             lines = block_text.strip().splitlines()
-            # ✅ Remove redundant stripping - lines are already clean
-            option_count = sum(1 for line in lines if OPTION_LABEL_RE.match(line))
-            if option_count != 4:
-                option_issues.append(f"Q{num} has {option_count} options")
+            # ✅ Option counting with improved logic
+            # Only count options BEFORE the "Correct Answer" or "Solution" section
+            filtered_lines = []
+            for line in lines:
+                lower = line.lower()
+                if lower.startswith("correct answer") or lower.startswith("solution"):
+                    break
+                filtered_lines.append(line)
+
+            # Now count valid option-like lines only before solution/answer
+            option_like_lines = [line for line in filtered_lines if OPTION_LABEL_RE.match(line)]
+            if len(option_like_lines) < 4:
+                option_issues.append(f"Q{num} has only {len(option_like_lines)} option(s)")
+            # ✅ Don't warn for more than 4 options
 
     # ✅ Repeated questions
     counts = Counter(base_numbers)
