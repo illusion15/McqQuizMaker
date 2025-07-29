@@ -1061,7 +1061,7 @@ body.dark-mode #imp-instruction p {
   justify-content: center;
 }
 
-.sample-btn {
+/* .sample-btn {
   width: auto;
   font-size: 1rem;
   padding: 0.8rem 1.5rem;
@@ -1075,13 +1075,13 @@ body.dark-mode #imp-instruction p {
   align-items: center;
   gap: 8px;
   font-weight: 500;
-}
+} 
 
 .sample-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
 }
-
+*/
 /* Testimonials */
 .testimonial-section {
   max-width: 1200px;
